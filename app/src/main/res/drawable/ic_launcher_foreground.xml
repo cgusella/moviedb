@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Clapperboard icon — 108×108dp canvas, safe zone 72×72 centered (from 18,18 to 90,90).
+  Background: solid blue #1565C0 (set in ic_launcher_background.xml).
+  Foreground: white clapperboard with blue accents.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ── Main body of the clapperboard (white rounded rect) ── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M26,47
+          C26,43.7 28.7,41 32,41
+          L76,41
+          C79.3,41 82,43.7 82,47
+          L82,85
+          C82,88.3 79.3,91 76,91
+          L32,91
+          C28.7,91 26,88.3 26,85
+          Z"/>
+
+    <!-- ── Clapper bar (upper hinged strip, white) ── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,30 L82,30 L82,43 L26,43 Z"/>
+
+    <!-- ── Diagonal stripes on clapper bar (filled blue trapezoids) ── -->
+    <!-- Each stripe is a parallelogram tilted 45°; width along top = 12, height = 13 -->
+    <!-- Stripe 1 -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M26,30 L38,30 L26,43 Z"/>
+    <!-- Stripe 2 -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M44,30 L56,30 L44,43 L32,43 Z"/>
+    <!-- Stripe 3 -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M62,30 L74,30 L62,43 L50,43 Z"/>
+    <!-- Stripe 4 (clipped to right edge at x=82) -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M80,30 L82,30 L82,32 L68,43 L56,43 Z"/>
+
+    <!-- ── Hinge pin: small blue circle at top-left of clapper bar ── -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M32,36.5 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0"/>
+
+    <!-- ── Divider line between clapper bar and body ── -->
+    <path
+        android:strokeColor="#1565C0"
+        android:strokeWidth="1.5"
+        android:pathData="M26,43 L82,43"/>
+
+    <!-- ── Text lines on the body (representing scene info) ── -->
+    <!-- Line 1 (longer) -->
+    <path
+        android:strokeColor="#D3E4FF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M35,57 L73,57"/>
+    <!-- Line 2 (longer) -->
+    <path
+        android:strokeColor="#D3E4FF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M35,67 L73,67"/>
+    <!-- Line 3 (shorter) -->
+    <path
+        android:strokeColor="#D3E4FF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M35,77 L58,77"/>
+
+</vector>

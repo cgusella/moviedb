@@ -1,0 +1,191 @@
+package com.example.moviedb.ui.screens.addmovie
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moviedb.di.AppModule
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddMovieScreen() {
+    val repository = AppModule.provideRepository(LocalContext.current)
+    val viewModel: AddMovieViewModel = viewModel(factory = AddMovieViewModel.factory(repository))
+
+    val title by viewModel.title.collectAsStateWithLifecycle()
+    val director by viewModel.director.collectAsStateWithLifecycle()
+    val year by viewModel.year.collectAsStateWithLifecycle()
+    val format by viewModel.format.collectAsStateWithLifecycle()
+    val belongsToSeries by viewModel.belongsToSeries.collectAsStateWithLifecycle()
+    val seriesName by viewModel.seriesName.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val validationError = uiState as? AddMovieUiState.ValidationError
+    val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
+    var formatExpanded by remember { mutableStateOf(false) }
+    val formats = listOf("DVD", "Blu-ray")
+
+    LaunchedEffect(uiState) {
+        if (uiState is AddMovieUiState.Success) {
+            val dest = (uiState as AddMovieUiState.Success).destination
+            val label = if (dest == Destination.COLLECTION) "collection" else "wishlist"
+            snackbarHostState.showSnackbar("Movie saved to $label!")
+            viewModel.resetForm()
+        }
+    }
+
+    if (uiState is AddMovieUiState.DuplicateWarning) {
+        AlertDialog(
+            onDismissRequest = { viewModel.resetForm() },
+            title = { Text("Already in collection?") },
+            text = { Text("\"$title ($year)\" appears to already be in your collection. Add it anyway?") },
+            confirmButton = {
+                TextButton(onClick = viewModel::onConfirmDuplicate) { Text("Add anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::resetForm) { Text("Cancel") }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Add Movie") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = title,
+                onValueChange = viewModel::onTitleChange,
+                label = { Text("Title") },
+                isError = validationError?.titleError != null,
+                supportingText = validationError?.titleError?.let { { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = director,
+                onValueChange = viewModel::onDirectorChange,
+                label = { Text("Director") },
+                isError = validationError?.directorError != null,
+                supportingText = validationError?.directorError?.let { { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = year,
+                onValueChange = viewModel::onYearChange,
+                label = { Text("Year") },
+                isError = validationError?.yearError != null,
+                supportingText = validationError?.yearError?.let { { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+
+            ExposedDropdownMenuBox(
+                expanded = formatExpanded,
+                onExpandedChange = { formatExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = format,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Format") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = formatExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
+                    expanded = formatExpanded,
+                    onDismissRequest = { formatExpanded = false }
+                ) {
+                    formats.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = { viewModel.onFormatChange(option); formatExpanded = false }
+                        )
+                    }
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = belongsToSeries,
+                    onCheckedChange = viewModel::onBelongsToSeriesChange
+                )
+                Text(
+                    text = "Belongs to a series",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            AnimatedVisibility(visible = belongsToSeries) {
+                OutlinedTextField(
+                    value = seriesName,
+                    onValueChange = viewModel::onSeriesNameChange,
+                    label = { Text("Series name") },
+                    isError = validationError?.seriesNameError != null,
+                    supportingText = validationError?.seriesNameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.onSaveClick(Destination.COLLECTION)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState !is AddMovieUiState.Loading
+            ) {
+                Text("Save to Collection")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.onSaveClick(Destination.WISHLIST)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState !is AddMovieUiState.Loading
+            ) {
+                Text("Save to Wishlist")
+            }
+        }
+    }
+}

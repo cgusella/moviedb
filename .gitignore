@@ -1,0 +1,25 @@
+# Build
+build/
+app/build/
+
+# Local config (contiene path SDK, non va in git)
+local.properties
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+
+.kotlin
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Keystore (mai in git!)
+*.jks
+*.keystore
+
+# Log
+*.log
