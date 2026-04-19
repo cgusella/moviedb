@@ -26,6 +26,7 @@ import com.example.moviedb.di.AppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.Intent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +64,15 @@ fun CollectionScreen() {
         scope.launch {
             val result = withContext(Dispatchers.IO) { BackupManager.import(context, uri) }
             if (result.isSuccess) {
-                (context as? Activity)?.recreate()
+                withContext(Dispatchers.Main) {
+                    val intent = context.packageManager
+                        .getLaunchIntentForPackage(context.packageName)!!
+                        .apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }
             } else {
                 snackbarHostState.showSnackbar(
                     "Import failed. Make sure you selected a valid backup file."
