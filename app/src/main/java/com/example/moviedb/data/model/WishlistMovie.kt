@@ -11,5 +11,7 @@ data class WishlistMovie(
     val year: Int,
     val format: String = "DVD",
     val seriesName: String? = null,
+    val posterUrl: String? = null,
+    val durationMinutes: Int? = null,
     val addedAt: Long = System.currentTimeMillis()
 )

@@ -11,13 +11,16 @@ import java.net.URLEncoder
 data class MovieLookupResult(
     val title: String,
     val director: String,
-    val year: String
+    val year: String,
+    val posterUrl: String? = null,
+    val durationMinutes: Int? = null
 )
 
 data class TmdbSearchResult(
     val id: Int,
     val title: String,
-    val year: String
+    val year: String,
+    val posterUrl: String? = null
 )
 
 class MovieLookupService {
@@ -38,7 +41,9 @@ class MovieLookupService {
                         val id = obj.get("id")?.asInt ?: return@mapNotNull null
                         val t = obj.get("title")?.asString ?: return@mapNotNull null
                         val year = obj.get("release_date")?.asString?.take(4) ?: ""
-                        TmdbSearchResult(id, t, year)
+                        val posterUrl = obj.get("poster_path")?.takeIf { !it.isJsonNull }?.asString
+                            ?.let { "https://image.tmdb.org/t/p/w92$it" }
+                        TmdbSearchResult(id, t, year, posterUrl)
                     } ?: emptyList()
             }
         }.getOrDefault(emptyList())
@@ -56,7 +61,11 @@ class MovieLookupService {
                     ?.getAsJsonArray("crew")
                     ?.firstOrNull { it.asJsonObject.get("job")?.asString == "Director" }
                     ?.asJsonObject?.get("name")?.asString ?: ""
-                MovieLookupResult(title, director, year)
+                val posterUrl = json.get("poster_path")?.takeIf { !it.isJsonNull }?.asString
+                    ?.let { "https://image.tmdb.org/t/p/w185$it" }
+                val durationMinutes = json.get("runtime")?.takeIf { !it.isJsonNull }?.asInt
+                    ?.takeIf { it > 0 }
+                MovieLookupResult(title, director, year, posterUrl, durationMinutes)
             }
         }.getOrNull()
     }

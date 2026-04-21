@@ -61,6 +61,9 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         }
     }
 
+    private val _posterUrl = MutableStateFlow<String?>(null)
+    private val _durationMinutes = MutableStateFlow<Int?>(null)
+
     fun onTitleSearchResultSelected(tmdbId: Int) {
         viewModelScope.launch {
             _titleSearchState.value = TitleSearchState.Loading
@@ -70,6 +73,8 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                 _title.value = result.title
                 _director.value = result.director
                 _year.value = result.year
+                _posterUrl.value = result.posterUrl
+                _durationMinutes.value = result.durationMinutes
             }
         }
     }
@@ -157,7 +162,9 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                     director = _director.value.trim(),
                     year = year ?: 0,
                     format = _format.value,
-                    seriesName = sName
+                    seriesName = sName,
+                    posterUrl = _posterUrl.value,
+                    durationMinutes = _durationMinutes.value
                 )
             )
             Destination.WISHLIST -> repository.addToWishlist(
@@ -166,7 +173,9 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                     director = _director.value.trim(),
                     year = year ?: 0,
                     format = _format.value,
-                    seriesName = sName
+                    seriesName = sName,
+                    posterUrl = _posterUrl.value,
+                    durationMinutes = _durationMinutes.value
                 )
             )
         }
@@ -178,6 +187,8 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         _belongsToSeries.value = false; _seriesName.value = ""
         _uiState.value = AddMovieUiState.Idle
         _titleSearchQuery.value = ""
+        _posterUrl.value = null
+        _durationMinutes.value = null
     }
 
     companion object {
