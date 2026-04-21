@@ -167,6 +167,12 @@ private fun WishlistItem(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+                val badgeLabel = if (movie.type == "TV Series") "TV Series" else "Film"
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(badgeLabel, style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.height(24.dp)
+                )
             }
             IconButton(onClick = onPromote) {
                 Icon(

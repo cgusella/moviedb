@@ -45,6 +45,7 @@ fun AddMovieScreen() {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val titleSearchQuery by viewModel.titleSearchQuery.collectAsStateWithLifecycle()
     val titleSearchState by viewModel.titleSearchState.collectAsStateWithLifecycle()
+    val searchType by viewModel.searchType.collectAsStateWithLifecycle()
 
     val validationError = uiState as? AddMovieUiState.ValidationError
     val snackbarHostState = remember { SnackbarHostState() }
@@ -72,7 +73,7 @@ fun AddMovieScreen() {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.onTitleSearchResultSelected(movie.id) }
+                                .clickable { viewModel.onTitleSearchResultSelected(movie.id, movie.type) }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -190,6 +191,19 @@ fun AddMovieScreen() {
                         Icon(Icons.Outlined.Search, contentDescription = "Search")
                     }
                 }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = searchType == SearchType.MOVIE,
+                    onClick = { viewModel.onSearchTypeChange(SearchType.MOVIE) },
+                    label = { Text("Film") }
+                )
+                FilterChip(
+                    selected = searchType == SearchType.TV,
+                    onClick = { viewModel.onSearchTypeChange(SearchType.TV) },
+                    label = { Text("TV Series") }
+                )
             }
 
             HorizontalDivider()

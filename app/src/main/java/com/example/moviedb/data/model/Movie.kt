@@ -10,6 +10,7 @@ data class Movie(
     val director: String,
     val year: Int,
     val format: String = "DVD",
+    val type: String = "Movie",
     val seriesName: String? = null,
     val posterUrl: String? = null,
     val durationMinutes: Int? = null,

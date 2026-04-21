@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
+enum class SearchType { MOVIE, TV }
+
 sealed class TitleSearchState {
     object Idle : TitleSearchState()
     object Loading : TitleSearchState()
@@ -40,6 +42,11 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
 
     private val lookupService = MovieLookupService()
 
+    private val _searchType = MutableStateFlow(SearchType.MOVIE)
+    val searchType: StateFlow<SearchType> = _searchType.asStateFlow()
+
+    fun onSearchTypeChange(type: SearchType) { _searchType.value = type }
+
     private val _titleSearchQuery = MutableStateFlow("")
     val titleSearchQuery: StateFlow<String> = _titleSearchQuery.asStateFlow()
 
@@ -53,9 +60,12 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         if (query.isBlank()) return
         viewModelScope.launch {
             _titleSearchState.value = TitleSearchState.Loading
-            val results = lookupService.searchByTitle(query)
+            val results = if (_searchType.value == SearchType.MOVIE)
+                lookupService.searchByTitle(query)
+            else
+                lookupService.searchTvByTitle(query)
             _titleSearchState.value = if (results.isEmpty())
-                TitleSearchState.Error("No movies found for \"$query\"")
+                TitleSearchState.Error("No results found for \"$query\"")
             else
                 TitleSearchState.Results(results)
         }
@@ -63,11 +73,15 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
 
     private val _posterUrl = MutableStateFlow<String?>(null)
     private val _durationMinutes = MutableStateFlow<Int?>(null)
+    private val _type = MutableStateFlow("Movie")
 
-    fun onTitleSearchResultSelected(tmdbId: Int) {
+    fun onTitleSearchResultSelected(tmdbId: Int, type: String) {
         viewModelScope.launch {
             _titleSearchState.value = TitleSearchState.Loading
-            val result = lookupService.fetchMovieById(tmdbId)
+            val result = if (type == "TV Series")
+                lookupService.fetchTvById(tmdbId)
+            else
+                lookupService.fetchMovieById(tmdbId)
             _titleSearchState.value = TitleSearchState.Idle
             if (result != null) {
                 _title.value = result.title
@@ -75,6 +89,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                 _year.value = result.year
                 _posterUrl.value = result.posterUrl
                 _durationMinutes.value = result.durationMinutes
+                _type.value = result.type
             }
         }
     }
@@ -115,7 +130,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
 
     fun onSaveClick(destination: Destination) {
         val titleErr = if (_title.value.isBlank()) "Title is required" else null
-        val directorErr = if (_director.value.isBlank()) "Director is required" else null
+        val directorErr = if (_director.value.isBlank()) "Director / Creator is required" else null
 
         val yearInt = _year.value.toIntOrNull()
         val maxYear = Calendar.getInstance().get(Calendar.YEAR) + 5
@@ -162,6 +177,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                     director = _director.value.trim(),
                     year = year ?: 0,
                     format = _format.value,
+                    type = _type.value,
                     seriesName = sName,
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value
@@ -173,6 +189,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
                     director = _director.value.trim(),
                     year = year ?: 0,
                     format = _format.value,
+                    type = _type.value,
                     seriesName = sName,
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value
@@ -189,6 +206,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         _titleSearchQuery.value = ""
         _posterUrl.value = null
         _durationMinutes.value = null
+        _type.value = "Movie"
     }
 
     companion object {

@@ -267,6 +267,12 @@ private fun MovieListItem(movie: Movie, onDelete: () -> Unit) {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+                val badgeLabel = if (movie.type == "TV Series") "TV Series" else "Film"
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(badgeLabel, style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.height(24.dp)
+                )
             }
             IconButton(onClick = { showDialog = true }) {
                 Icon(
