@@ -7,10 +7,19 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.moviedb.data.model.Movie
 import com.example.moviedb.data.model.WishlistMovie
+import com.example.moviedb.data.remote.MovieLookupService
+import com.example.moviedb.data.remote.TmdbSearchResult
 import com.example.moviedb.data.repository.MovieRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
+
+sealed class TitleSearchState {
+    object Idle : TitleSearchState()
+    object Loading : TitleSearchState()
+    data class Results(val items: List<TmdbSearchResult>) : TitleSearchState()
+    data class Error(val message: String) : TitleSearchState()
+}
 
 sealed class AddMovieUiState {
     object Idle : AddMovieUiState()
@@ -28,6 +37,44 @@ sealed class AddMovieUiState {
 enum class Destination { COLLECTION, WISHLIST }
 
 class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
+
+    private val lookupService = MovieLookupService()
+
+    private val _titleSearchQuery = MutableStateFlow("")
+    val titleSearchQuery: StateFlow<String> = _titleSearchQuery.asStateFlow()
+
+    private val _titleSearchState = MutableStateFlow<TitleSearchState>(TitleSearchState.Idle)
+    val titleSearchState: StateFlow<TitleSearchState> = _titleSearchState.asStateFlow()
+
+    fun onTitleSearchQueryChange(v: String) { _titleSearchQuery.value = v }
+
+    fun onTitleSearch() {
+        val query = _titleSearchQuery.value.trim()
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _titleSearchState.value = TitleSearchState.Loading
+            val results = lookupService.searchByTitle(query)
+            _titleSearchState.value = if (results.isEmpty())
+                TitleSearchState.Error("No movies found for \"$query\"")
+            else
+                TitleSearchState.Results(results)
+        }
+    }
+
+    fun onTitleSearchResultSelected(tmdbId: Int) {
+        viewModelScope.launch {
+            _titleSearchState.value = TitleSearchState.Loading
+            val result = lookupService.fetchMovieById(tmdbId)
+            _titleSearchState.value = TitleSearchState.Idle
+            if (result != null) {
+                _title.value = result.title
+                _director.value = result.director
+                _year.value = result.year
+            }
+        }
+    }
+
+    fun dismissTitleSearch() { _titleSearchState.value = TitleSearchState.Idle }
 
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
@@ -130,6 +177,7 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         _title.value = ""; _director.value = ""; _year.value = ""; _format.value = "DVD"
         _belongsToSeries.value = false; _seriesName.value = ""
         _uiState.value = AddMovieUiState.Idle
+        _titleSearchQuery.value = ""
     }
 
     companion object {

@@ -1,16 +1,23 @@
 package com.example.moviedb.ui.screens.addmovie
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,6 +37,8 @@ fun AddMovieScreen() {
     val belongsToSeries by viewModel.belongsToSeries.collectAsStateWithLifecycle()
     val seriesName by viewModel.seriesName.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val titleSearchQuery by viewModel.titleSearchQuery.collectAsStateWithLifecycle()
+    val titleSearchState by viewModel.titleSearchState.collectAsStateWithLifecycle()
 
     val validationError = uiState as? AddMovieUiState.ValidationError
     val snackbarHostState = remember { SnackbarHostState() }
@@ -44,6 +53,42 @@ fun AddMovieScreen() {
             snackbarHostState.showSnackbar("Movie saved to $label!")
             viewModel.resetForm()
         }
+    }
+
+    if (titleSearchState is TitleSearchState.Results) {
+        val results = (titleSearchState as TitleSearchState.Results).items
+        AlertDialog(
+            onDismissRequest = viewModel::dismissTitleSearch,
+            title = { Text("Select a movie") },
+            text = {
+                LazyColumn {
+                    items(results) { movie ->
+                        ListItem(
+                            headlineContent = { Text(movie.title) },
+                            supportingContent = { if (movie.year.isNotBlank()) Text(movie.year) },
+                            modifier = Modifier.clickable {
+                                viewModel.onTitleSearchResultSelected(movie.id)
+                            }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissTitleSearch) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (titleSearchState is TitleSearchState.Error) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissTitleSearch,
+            title = { Text("Not found") },
+            text = { Text((titleSearchState as TitleSearchState.Error).message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissTitleSearch) { Text("OK") }
+            }
+        )
     }
 
     if (uiState is AddMovieUiState.DuplicateWarning) {
@@ -79,6 +124,40 @@ fun AddMovieScreen() {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = titleSearchQuery,
+                    onValueChange = viewModel::onTitleSearchQueryChange,
+                    label = { Text("Search by title") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        focusManager.clearFocus()
+                        viewModel.onTitleSearch()
+                    })
+                )
+                IconButton(
+                    onClick = {
+                        focusManager.clearFocus()
+                        viewModel.onTitleSearch()
+                    },
+                    enabled = titleSearchState !is TitleSearchState.Loading
+                ) {
+                    if (titleSearchState is TitleSearchState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Outlined.Search, contentDescription = "Search")
+                    }
+                }
+            }
+
+            HorizontalDivider()
+
             OutlinedTextField(
                 value = title,
                 onValueChange = viewModel::onTitleChange,
