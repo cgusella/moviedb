@@ -10,6 +10,9 @@ interface WishlistDao {
     @Query("SELECT * FROM wishlist ORDER BY addedAt DESC")
     fun getAllWishlistMovies(): Flow<List<WishlistMovie>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM wishlist WHERE LOWER(title) = LOWER(:title) AND year = :year)")
+    suspend fun wishlistExists(title: String, year: Int): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertWishlistMovie(movie: WishlistMovie): Long
 

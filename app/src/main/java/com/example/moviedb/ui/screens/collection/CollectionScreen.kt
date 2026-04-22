@@ -46,7 +46,7 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
 
     var showMenu by remember { mutableStateOf(false) }
-    var showImportConfirm by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -61,7 +61,22 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
         }
     }
 
-    val importLauncher = rememberLauncherForActivityResult(
+    val mergeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { BackupManager.merge(context, uri) }
+            if (result.isSuccess) {
+                val (imported, skipped) = result.getOrThrow()
+                snackbarHostState.showSnackbar("Imported $imported, $skipped already present.")
+            } else {
+                snackbarHostState.showSnackbar("Merge failed. Make sure you selected a valid backup file.")
+            }
+        }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -78,26 +93,30 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                     (context as? Activity)?.finish()
                 }
             } else {
-                snackbarHostState.showSnackbar(
-                    "Import failed. Make sure you selected a valid backup file."
-                )
+                snackbarHostState.showSnackbar("Restore failed. Make sure you selected a valid backup file.")
             }
         }
     }
 
-    if (showImportConfirm) {
+    if (showImportDialog) {
         AlertDialog(
-            onDismissRequest = { showImportConfirm = false },
-            title = { Text("Restore backup?") },
-            text = { Text("This will replace all your current data with the backup. This cannot be undone. Continue?") },
+            onDismissRequest = { showImportDialog = false },
+            title = { Text("Import backup") },
+            text = { Text("Merge adds only missing movies without touching existing data.\nFull Restore replaces everything and cannot be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    showImportConfirm = false
-                    importLauncher.launch(arrayOf("application/octet-stream", "*/*"))
-                }) { Text("Restore") }
+                    showImportDialog = false
+                    mergeLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                }) { Text("Merge") }
             },
             dismissButton = {
-                TextButton(onClick = { showImportConfirm = false }) { Text("Cancel") }
+                Column {
+                    TextButton(onClick = {
+                        showImportDialog = false
+                        restoreLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                    }) { Text("Full Restore") }
+                    TextButton(onClick = { showImportDialog = false }) { Text("Cancel") }
+                }
             }
         )
     }
@@ -133,7 +152,7 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                             text = { Text("Import backup") },
                             onClick = {
                                 showMenu = false
-                                showImportConfirm = true
+                                showImportDialog = true
                             }
                         )
                     }
