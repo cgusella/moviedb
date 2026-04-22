@@ -36,7 +36,11 @@ class MovieRepository(
                 director = wishlistMovie.director,
                 year = wishlistMovie.year,
                 format = wishlistMovie.format,
-                seriesName = wishlistMovie.seriesName
+                type = wishlistMovie.type,
+                seriesName = wishlistMovie.seriesName,
+                posterUrl = wishlistMovie.posterUrl,
+                durationMinutes = wishlistMovie.durationMinutes,
+                genres = wishlistMovie.genres
             )
         )
     }

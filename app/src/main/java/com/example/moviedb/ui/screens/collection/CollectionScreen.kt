@@ -266,6 +266,15 @@ private fun MovieListItem(movie: Movie, onDelete: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                if (!movie.genres.isNullOrBlank()) {
+                    Text(
+                        text = movie.genres,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 if (movie.seriesName != null) {
                     Text(
                         text = "Series: ${movie.seriesName}",

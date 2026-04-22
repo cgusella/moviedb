@@ -9,7 +9,7 @@ import com.example.moviedb.data.model.WishlistMovie
 
 @Database(
     entities = [Movie::class, WishlistMovie::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {

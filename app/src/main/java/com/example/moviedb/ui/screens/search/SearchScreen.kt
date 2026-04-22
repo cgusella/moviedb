@@ -3,6 +3,7 @@ package com.example.moviedb.ui.screens.search
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,8 @@ fun SearchScreen() {
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
     val isInCollection by viewModel.isInCollection.collectAsStateWithLifecycle()
+    val availableGenres by viewModel.availableGenres.collectAsStateWithLifecycle()
+    val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -49,14 +52,16 @@ fun SearchScreen() {
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp),
                 placeholder = { Text("Search title or director…") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
@@ -69,11 +74,31 @@ fun SearchScreen() {
                 singleLine = true
             )
 
+            if (availableGenres.isNotEmpty()) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(availableGenres) { genre ->
+                        FilterChip(
+                            selected = selectedGenre == genre,
+                            onClick = { viewModel.onGenreSelected(genre) },
+                            label = { Text(genre) }
+                        )
+                    }
+                }
+            }
+
             when {
-                query.isBlank() -> {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                query.isBlank() && selectedGenre == null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            "Type a title or director to check your collection.",
+                            "Type a title or director, or pick a genre.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -81,6 +106,7 @@ fun SearchScreen() {
                 }
                 results.isEmpty() -> {
                     Card(
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer
                         )
@@ -101,6 +127,7 @@ fun SearchScreen() {
                 }
                 else -> {
                     Card(
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
@@ -127,7 +154,10 @@ fun SearchScreen() {
                         }
                     }
 
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(results, key = { it.id }) { movie ->
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Row(
