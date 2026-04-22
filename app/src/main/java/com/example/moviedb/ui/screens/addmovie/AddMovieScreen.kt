@@ -57,8 +57,9 @@ fun AddMovieScreen() {
         if (uiState is AddMovieUiState.Success) {
             val dest = (uiState as AddMovieUiState.Success).destination
             val label = if (dest == Destination.COLLECTION) "collection" else "wishlist"
-            snackbarHostState.showSnackbar("Movie saved to $label!")
             viewModel.resetForm()
+            snackbarHostState.showSnackbar("Movie saved to $label!")
+            viewModel.clearUiState()
         }
     }
 

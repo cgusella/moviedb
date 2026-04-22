@@ -215,12 +215,15 @@ class AddMovieViewModel(
     fun resetForm() {
         _title.value = ""; _director.value = ""; _year.value = ""; _format.value = "DVD"
         _belongsToSeries.value = false; _seriesName.value = ""
-        _uiState.value = AddMovieUiState.Idle
         _titleSearchQuery.value = ""
         _posterUrl.value = null
         _durationMinutes.value = null
         _genres.value = null
         _type.value = "Movie"
+    }
+
+    fun clearUiState() {
+        _uiState.value = AddMovieUiState.Idle
     }
 
     companion object {

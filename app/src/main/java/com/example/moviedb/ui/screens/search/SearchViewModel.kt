@@ -49,7 +49,10 @@ class SearchViewModel(private val repository: MovieRepository) : ViewModel() {
         .map { it.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    fun onQueryChange(q: String) { _query.value = q }
+    fun onQueryChange(q: String) {
+        _query.value = q
+        if (q.isNotBlank()) _selectedGenre.value = null
+    }
 
     fun onGenreSelected(genre: String) {
         _selectedGenre.value = if (_selectedGenre.value == genre) null else genre
