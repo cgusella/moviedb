@@ -9,6 +9,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -16,7 +17,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,12 +49,27 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
     val movies by viewModel.filteredMovies.collectAsStateWithLifecycle()
     val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val isSelectionMode by viewModel.isSelectionMode.collectAsStateWithLifecycle()
+    val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
     val allSelected = movies.isNotEmpty() && selectedIds.size == movies.size
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    var needsScrollToTop by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sortOption) {
+        needsScrollToTop = true
+    }
+
+    LaunchedEffect(movies) {
+        if (needsScrollToTop) {
+            listState.scrollToItem(0)
+            needsScrollToTop = false
+        }
+    }
 
     var showMenu by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -180,6 +198,31 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                     modifier = Modifier.height(48.dp),
                     windowInsets = WindowInsets(top = 10.dp),
                     actions = {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(Icons.Default.Sort, contentDescription = "Sort")
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            listOf(
+                                SortField.TITLE to "Title",
+                                SortField.DIRECTOR to "Director",
+                                SortField.YEAR to "Year",
+                            ).forEach { (field, label) ->
+                                val isActive = sortOption.field == field
+                                val arrow = if (isActive) if (sortOption.direction == SortDirection.ASC) " ↑" else " ↓" else ""
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "$label$arrow",
+                                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    onClick = { viewModel.toggleSort(field); showSortMenu = false }
+                                )
+                            }
+                        }
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
@@ -226,6 +269,7 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {

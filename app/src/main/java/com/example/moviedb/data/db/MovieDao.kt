@@ -10,6 +10,24 @@ interface MovieDao {
     @Query("SELECT * FROM movies ORDER BY LOWER(title) ASC")
     fun getAllMovies(): Flow<List<Movie>>
 
+    @Query("SELECT * FROM movies ORDER BY LOWER(title) ASC")
+    fun getByTitleAsc(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies ORDER BY LOWER(title) DESC")
+    fun getByTitleDesc(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies ORDER BY LOWER(director) ASC, LOWER(title) ASC")
+    fun getByDirectorAsc(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies ORDER BY LOWER(director) DESC, LOWER(title) ASC")
+    fun getByDirectorDesc(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies ORDER BY year ASC, LOWER(title) ASC")
+    fun getByYearAsc(): Flow<List<Movie>>
+
+    @Query("SELECT * FROM movies ORDER BY year DESC, LOWER(title) ASC")
+    fun getByYearDesc(): Flow<List<Movie>>
+
     @Query("""
         SELECT * FROM movies
         WHERE LOWER(title) LIKE '%' || LOWER(:query) || '%'

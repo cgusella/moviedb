@@ -4,6 +4,9 @@ import com.example.moviedb.data.db.MovieDao
 import com.example.moviedb.data.db.WishlistDao
 import com.example.moviedb.data.model.Movie
 import com.example.moviedb.data.model.WishlistMovie
+import com.example.moviedb.ui.screens.collection.SortDirection
+import com.example.moviedb.ui.screens.collection.SortField
+import com.example.moviedb.ui.screens.collection.SortOption
 import kotlinx.coroutines.flow.Flow
 
 class MovieRepository(
@@ -12,6 +15,12 @@ class MovieRepository(
 ) {
     val allMovies: Flow<List<Movie>> = movieDao.getAllMovies()
     val allWishlistMovies: Flow<List<WishlistMovie>> = wishlistDao.getAllWishlistMovies()
+
+    fun getMoviesSorted(sortOption: SortOption): Flow<List<Movie>> = when (sortOption.field) {
+        SortField.TITLE -> if (sortOption.direction == SortDirection.ASC) movieDao.getByTitleAsc() else movieDao.getByTitleDesc()
+        SortField.DIRECTOR -> if (sortOption.direction == SortDirection.ASC) movieDao.getByDirectorAsc() else movieDao.getByDirectorDesc()
+        SortField.YEAR -> if (sortOption.direction == SortDirection.ASC) movieDao.getByYearAsc() else movieDao.getByYearDesc()
+    }
 
     fun searchMovies(query: String): Flow<List<Movie>> = movieDao.searchMovies(query)
 

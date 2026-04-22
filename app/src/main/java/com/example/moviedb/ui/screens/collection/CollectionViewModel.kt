@@ -12,8 +12,21 @@ import kotlinx.coroutines.launch
 
 class CollectionViewModel(private val repository: MovieRepository) : ViewModel() {
 
-    val filteredMovies: StateFlow<List<Movie>> = repository.allMovies
+    private val _sortOption = MutableStateFlow(SortOption(SortField.TITLE))
+    val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
+
+    val filteredMovies: StateFlow<List<Movie>> = _sortOption
+        .flatMapLatest { repository.getMoviesSorted(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun toggleSort(field: SortField) {
+        _sortOption.update { current ->
+            if (current.field == field)
+                current.copy(direction = if (current.direction == SortDirection.ASC) SortDirection.DESC else SortDirection.ASC)
+            else
+                SortOption(field)
+        }
+    }
 
     private val _isSelectionMode = MutableStateFlow(false)
     val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
