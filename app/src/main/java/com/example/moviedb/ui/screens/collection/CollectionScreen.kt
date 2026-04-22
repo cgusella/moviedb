@@ -107,10 +107,12 @@ fun CollectionScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Collection") },
+                title = { Text("My Shelf") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
+                modifier = Modifier.height(48.dp),
+                windowInsets = WindowInsets(top = 10.dp),
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")

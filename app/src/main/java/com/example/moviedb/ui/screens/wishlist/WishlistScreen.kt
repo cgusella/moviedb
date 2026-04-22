@@ -45,7 +45,9 @@ fun WishlistScreen() {
                 title = { Text("Wishlist") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                modifier = Modifier.height(48.dp),
+                windowInsets = WindowInsets(top = 10.dp)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
