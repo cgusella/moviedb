@@ -51,7 +51,7 @@ fun AddMovieScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
     var formatExpanded by remember { mutableStateOf(false) }
-    val formats = listOf("DVD", "Blu-ray", "4K")
+    val formats = listOf("DVD", "Blu-ray", "4K", "Video tape")
 
     LaunchedEffect(uiState) {
         if (uiState is AddMovieUiState.Success) {
