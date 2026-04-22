@@ -27,7 +27,11 @@ class MovieRepository(
     suspend fun movieExists(title: String, year: Int): Boolean =
         movieDao.movieExists(title, year)
 
+    suspend fun getMovieById(id: Int): Movie? = movieDao.getMovieById(id)
+
     suspend fun addMovie(movie: Movie): Long = movieDao.insertMovie(movie)
+
+    suspend fun updateMovie(movie: Movie) = movieDao.updateMovie(movie)
 
     suspend fun deleteMovie(movie: Movie) = movieDao.deleteMovie(movie)
 

@@ -39,8 +39,14 @@ interface MovieDao {
     @Query("SELECT EXISTS(SELECT 1 FROM movies WHERE LOWER(title) = LOWER(:title) AND year = :year)")
     suspend fun movieExists(title: String, year: Int): Boolean
 
+    @Query("SELECT * FROM movies WHERE id = :id")
+    suspend fun getMovieById(id: Int): Movie?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMovie(movie: Movie): Long
+
+    @Update
+    suspend fun updateMovie(movie: Movie)
 
     @Delete
     suspend fun deleteMovie(movie: Movie)

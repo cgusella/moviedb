@@ -10,10 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.moviedb.ui.screens.addmovie.AddMovieScreen
 import com.example.moviedb.ui.screens.collection.CollectionScreen
+import com.example.moviedb.ui.screens.editmovie.EditMovieScreen
 import com.example.moviedb.ui.screens.search.SearchScreen
 import com.example.moviedb.ui.screens.settings.SettingsScreen
 import com.example.moviedb.ui.screens.wishlist.WishlistScreen
@@ -32,9 +35,19 @@ val bottomNavScreens = listOf(Screen.Collection, Screen.AddMovie, Screen.Wishlis
 fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(navController = navController, startDestination = Screen.Collection.route, modifier = modifier) {
         composable(Screen.Collection.route) {
-            CollectionScreen(onNavigateToSettings = { navController.navigate(Screen.Settings.route) })
+            CollectionScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToEdit = { movieId -> navController.navigate("edit_movie/$movieId") }
+            )
         }
         composable(Screen.AddMovie.route) { AddMovieScreen() }
+        composable(
+            route = "edit_movie/{movieId}",
+            arguments = listOf(navArgument("movieId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val movieId = backStackEntry.arguments!!.getInt("movieId")
+            EditMovieScreen(movieId = movieId, onBack = { navController.popBackStack() })
+        }
         composable(Screen.Wishlist.route) { WishlistScreen() }
         composable(Screen.Search.route) { SearchScreen() }
         composable(Screen.Settings.route) {

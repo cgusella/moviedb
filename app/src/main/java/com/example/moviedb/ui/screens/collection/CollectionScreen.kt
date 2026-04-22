@@ -41,7 +41,7 @@ import android.content.Intent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
+fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (Int) -> Unit = {}) {
     val context = LocalContext.current
     val repository = AppModule.provideRepository(context)
     val viewModel: CollectionViewModel = viewModel(factory = CollectionViewModel.factory(repository))
@@ -280,7 +280,8 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                             isSelectionMode = isSelectionMode,
                             onDelete = { viewModel.deleteMovie(movie) },
                             onLongClick = { viewModel.toggleSelection(movie.id) },
-                            onToggleSelect = { viewModel.toggleSelection(movie.id) }
+                            onToggleSelect = { viewModel.toggleSelection(movie.id) },
+                            onEdit = { onNavigateToEdit(movie.id) }
                         )
                     }
                 }
@@ -326,7 +327,8 @@ private fun MovieListItem(
     isSelectionMode: Boolean,
     onDelete: () -> Unit,
     onLongClick: () -> Unit,
-    onToggleSelect: () -> Unit
+    onToggleSelect: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -348,7 +350,7 @@ private fun MovieListItem(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { if (isSelectionMode) onToggleSelect() },
+                onClick = { if (isSelectionMode) onToggleSelect() else onEdit() },
                 onLongClick = { if (!isSelectionMode) onLongClick() }
             ),
         colors = if (selected)
