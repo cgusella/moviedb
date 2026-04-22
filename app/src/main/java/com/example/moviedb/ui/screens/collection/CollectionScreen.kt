@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,7 +37,7 @@ import android.content.Intent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollectionScreen() {
+fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
     val context = LocalContext.current
     val repository = AppModule.provideRepository(context)
     val viewModel: CollectionViewModel = viewModel(factory = CollectionViewModel.factory(repository))
@@ -114,6 +115,9 @@ fun CollectionScreen() {
                 modifier = Modifier.height(48.dp),
                 windowInsets = WindowInsets(top = 10.dp),
                 actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")
                     }

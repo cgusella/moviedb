@@ -29,9 +29,9 @@ class MovieLookupService {
 
     private val client = OkHttpClient()
 
-    suspend fun searchByTitle(title: String): List<TmdbSearchResult> = withContext(Dispatchers.IO) {
+    suspend fun searchByTitle(title: String, language: String = "it-IT"): List<TmdbSearchResult> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(title, "UTF-8")
-        val url = "https://api.themoviedb.org/3/search/movie?query=$encoded&api_key=${BuildConfig.TMDB_API_KEY}"
+        val url = "https://api.themoviedb.org/3/search/movie?query=$encoded&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext emptyList()
@@ -51,9 +51,9 @@ class MovieLookupService {
         }.getOrDefault(emptyList())
     }
 
-    suspend fun searchTvByTitle(title: String): List<TmdbSearchResult> = withContext(Dispatchers.IO) {
+    suspend fun searchTvByTitle(title: String, language: String = "it-IT"): List<TmdbSearchResult> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(title, "UTF-8")
-        val url = "https://api.themoviedb.org/3/search/tv?query=$encoded&api_key=${BuildConfig.TMDB_API_KEY}"
+        val url = "https://api.themoviedb.org/3/search/tv?query=$encoded&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext emptyList()
@@ -73,8 +73,8 @@ class MovieLookupService {
         }.getOrDefault(emptyList())
     }
 
-    suspend fun fetchMovieById(tmdbId: Int): MovieLookupResult? = withContext(Dispatchers.IO) {
-        val url = "https://api.themoviedb.org/3/movie/$tmdbId?append_to_response=credits&api_key=${BuildConfig.TMDB_API_KEY}"
+    suspend fun fetchMovieById(tmdbId: Int, language: String = "it-IT"): MovieLookupResult? = withContext(Dispatchers.IO) {
+        val url = "https://api.themoviedb.org/3/movie/$tmdbId?append_to_response=credits&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext null
@@ -94,8 +94,8 @@ class MovieLookupService {
         }.getOrNull()
     }
 
-    suspend fun fetchTvById(tmdbId: Int): MovieLookupResult? = withContext(Dispatchers.IO) {
-        val url = "https://api.themoviedb.org/3/tv/$tmdbId?append_to_response=credits&api_key=${BuildConfig.TMDB_API_KEY}"
+    suspend fun fetchTvById(tmdbId: Int, language: String = "it-IT"): MovieLookupResult? = withContext(Dispatchers.IO) {
+        val url = "https://api.themoviedb.org/3/tv/$tmdbId?append_to_response=credits&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext null

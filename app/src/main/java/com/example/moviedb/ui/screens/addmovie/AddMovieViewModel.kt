@@ -1,12 +1,14 @@
 package com.example.moviedb.ui.screens.addmovie
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.moviedb.data.model.Movie
 import com.example.moviedb.data.model.WishlistMovie
+import com.example.moviedb.data.preferences.SettingsRepository
 import com.example.moviedb.data.remote.MovieLookupService
 import com.example.moviedb.data.remote.TmdbSearchResult
 import com.example.moviedb.data.repository.MovieRepository
@@ -38,9 +40,16 @@ sealed class AddMovieUiState {
 
 enum class Destination { COLLECTION, WISHLIST }
 
-class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
+class AddMovieViewModel(
+    application: Application,
+    private val repository: MovieRepository
+) : AndroidViewModel(application) {
 
     private val lookupService = MovieLookupService()
+
+    private val languageCode: StateFlow<String> = SettingsRepository
+        .getLanguageCode(application)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "it-IT")
 
     private val _searchType = MutableStateFlow(SearchType.MOVIE)
     val searchType: StateFlow<SearchType> = _searchType.asStateFlow()
@@ -61,9 +70,9 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         viewModelScope.launch {
             _titleSearchState.value = TitleSearchState.Loading
             val results = if (_searchType.value == SearchType.MOVIE)
-                lookupService.searchByTitle(query)
+                lookupService.searchByTitle(query, languageCode.value)
             else
-                lookupService.searchTvByTitle(query)
+                lookupService.searchTvByTitle(query, languageCode.value)
             _titleSearchState.value = if (results.isEmpty())
                 TitleSearchState.Error("No results found for \"$query\"")
             else
@@ -79,9 +88,9 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
         viewModelScope.launch {
             _titleSearchState.value = TitleSearchState.Loading
             val result = if (type == "TV Series")
-                lookupService.fetchTvById(tmdbId)
+                lookupService.fetchTvById(tmdbId, languageCode.value)
             else
-                lookupService.fetchMovieById(tmdbId)
+                lookupService.fetchMovieById(tmdbId, languageCode.value)
             _titleSearchState.value = TitleSearchState.Idle
             if (result != null) {
                 _title.value = result.title
@@ -211,7 +220,10 @@ class AddMovieViewModel(private val repository: MovieRepository) : ViewModel() {
 
     companion object {
         fun factory(repository: MovieRepository): ViewModelProvider.Factory = viewModelFactory {
-            initializer { AddMovieViewModel(repository) }
+            initializer {
+                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!
+                AddMovieViewModel(app, repository)
+            }
         }
     }
 }
