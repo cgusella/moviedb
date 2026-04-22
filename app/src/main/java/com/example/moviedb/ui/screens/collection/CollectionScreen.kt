@@ -3,12 +3,15 @@ package com.example.moviedb.ui.screens.collection
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
@@ -41,12 +44,16 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
     val viewModel: CollectionViewModel = viewModel(factory = CollectionViewModel.factory(repository))
 
     val movies by viewModel.filteredMovies.collectAsStateWithLifecycle()
+    val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsStateWithLifecycle()
+    val allSelected = movies.isNotEmpty() && selectedIds.size == movies.size
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     var showMenu by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -121,43 +128,86 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
         )
     }
 
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Remove movies") },
+            text = { Text("Remove ${selectedIds.size} movies from your collection?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.deleteSelected()
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("My Shelf") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                modifier = Modifier.height(48.dp),
-                windowInsets = WindowInsets(top = 10.dp),
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+            if (isSelectionMode) {
+                TopAppBar(
+                    title = { Text("${selectedIds.size} selected") },
+                    navigationIcon = {
+                        IconButton(onClick = viewModel::clearSelection) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier.height(48.dp),
+                    windowInsets = WindowInsets(top = 10.dp),
+                    actions = {
+                        TextButton(onClick = {
+                            if (allSelected) viewModel.deselectAll() else viewModel.selectAll()
+                        }) {
+                            Text(if (allSelected) "None" else "All")
+                        }
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+                        }
                     }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                )
+            } else {
+                TopAppBar(
+                    title = { Text("My Shelf") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier.height(48.dp),
+                    windowInsets = WindowInsets(top = 10.dp),
+                    actions = {
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Export backup") },
+                                onClick = {
+                                    showMenu = false
+                                    exportLauncher.launch("moviedb_backup.db")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import backup") },
+                                onClick = {
+                                    showMenu = false
+                                    showImportDialog = true
+                                }
+                            )
+                        }
                     }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Export backup") },
-                            onClick = {
-                                showMenu = false
-                                exportLauncher.launch("moviedb_backup.db")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Import backup") },
-                            onClick = {
-                                showMenu = false
-                                showImportDialog = true
-                            }
-                        )
-                    }
-                }
-            )
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
@@ -180,7 +230,14 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(movies, key = { it.id }) { movie ->
-                        MovieListItem(movie = movie, onDelete = { viewModel.deleteMovie(movie) })
+                        MovieListItem(
+                            movie = movie,
+                            selected = movie.id in selectedIds,
+                            isSelectionMode = isSelectionMode,
+                            onDelete = { viewModel.deleteMovie(movie) },
+                            onLongClick = { viewModel.toggleSelection(movie.id) },
+                            onToggleSelect = { viewModel.toggleSelection(movie.id) }
+                        )
                     }
                 }
             }
@@ -217,8 +274,16 @@ private fun MoviePoster(posterUrl: String?) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MovieListItem(movie: Movie, onDelete: () -> Unit) {
+private fun MovieListItem(
+    movie: Movie,
+    selected: Boolean,
+    isSelectionMode: Boolean,
+    onDelete: () -> Unit,
+    onLongClick: () -> Unit,
+    onToggleSelect: () -> Unit
+) {
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
@@ -235,7 +300,18 @@ private fun MovieListItem(movie: Movie, onDelete: () -> Unit) {
         )
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { if (isSelectionMode) onToggleSelect() },
+                onLongClick = { if (!isSelectionMode) onLongClick() }
+            ),
+        colors = if (selected)
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        else
+            CardDefaults.cardColors()
+    ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
@@ -286,12 +362,19 @@ private fun MovieListItem(movie: Movie, onDelete: () -> Unit) {
                     modifier = Modifier.height(24.dp)
                 )
             }
-            IconButton(onClick = { showDialog = true }) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onToggleSelect() }
                 )
+            } else {
+                IconButton(onClick = { showDialog = true }) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
