@@ -1,32 +1,20 @@
 package com.example.moviedb.ui.screens.editmovie
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moviedb.di.AppModule
@@ -48,9 +36,10 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
     val format by viewModel.format.collectAsStateWithLifecycle()
     val belongsToSeries by viewModel.belongsToSeries.collectAsStateWithLifecycle()
     val seriesName by viewModel.seriesName.collectAsStateWithLifecycle()
-    val titleSearchQuery by viewModel.titleSearchQuery.collectAsStateWithLifecycle()
-    val titleSearchState by viewModel.titleSearchState.collectAsStateWithLifecycle()
-    val searchType by viewModel.searchType.collectAsStateWithLifecycle()
+    val type by viewModel.type.collectAsStateWithLifecycle()
+    val genres by viewModel.genres.collectAsStateWithLifecycle()
+    val durationText by viewModel.durationText.collectAsStateWithLifecycle()
+    val posterUrl by viewModel.posterUrl.collectAsStateWithLifecycle()
 
     val validationError = uiState as? EditMovieUiState.ValidationError
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,72 +53,6 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
             snackbarHostState.showSnackbar("Movie not found.")
             onBack()
         }
-    }
-
-    if (titleSearchState is TitleSearchState.Results) {
-        val results = (titleSearchState as TitleSearchState.Results).items
-        AlertDialog(
-            onDismissRequest = viewModel::dismissTitleSearch,
-            title = { Text("Select a movie") },
-            text = {
-                LazyColumn {
-                    items(results) { movie ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.onTitleSearchResultSelected(movie.id, movie.type) }
-                                .padding(vertical = 8.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val shape = RoundedCornerShape(4.dp)
-                            if (movie.posterUrl != null) {
-                                AsyncImage(
-                                    model = movie.posterUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(width = 40.dp, height = 56.dp).clip(shape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 40.dp, height = 56.dp)
-                                        .clip(shape)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.Movie, contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp))
-                                }
-                            }
-                            Column {
-                                Text(movie.title, style = MaterialTheme.typography.bodyLarge)
-                                if (movie.year.isNotBlank()) {
-                                    Text(movie.year, style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                        HorizontalDivider()
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = viewModel::dismissTitleSearch) { Text("Cancel") }
-            }
-        )
-    }
-
-    if (titleSearchState is TitleSearchState.Error) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissTitleSearch,
-            title = { Text("Not found") },
-            text = { Text((titleSearchState as TitleSearchState.Error).message) },
-            confirmButton = {
-                TextButton(onClick = viewModel::dismissTitleSearch) { Text("OK") }
-            }
-        )
     }
 
     Scaffold(
@@ -165,53 +88,6 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = titleSearchQuery,
-                    onValueChange = viewModel::onTitleSearchQueryChange,
-                    label = { Text("Search by title") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = {
-                        focusManager.clearFocus()
-                        viewModel.onTitleSearch()
-                    })
-                )
-                IconButton(
-                    onClick = {
-                        focusManager.clearFocus()
-                        viewModel.onTitleSearch()
-                    },
-                    enabled = titleSearchState !is TitleSearchState.Loading
-                ) {
-                    if (titleSearchState is TitleSearchState.Loading) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Outlined.Search, contentDescription = "Search")
-                    }
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = searchType == com.example.moviedb.ui.screens.addmovie.SearchType.MOVIE,
-                    onClick = { viewModel.onSearchTypeChange(com.example.moviedb.ui.screens.addmovie.SearchType.MOVIE) },
-                    label = { Text("Film") }
-                )
-                FilterChip(
-                    selected = searchType == com.example.moviedb.ui.screens.addmovie.SearchType.TV,
-                    onClick = { viewModel.onSearchTypeChange(com.example.moviedb.ui.screens.addmovie.SearchType.TV) },
-                    label = { Text("TV Series") }
-                )
-            }
-
-            HorizontalDivider()
-
             OutlinedTextField(
                 value = title,
                 onValueChange = viewModel::onTitleChange,
@@ -241,6 +117,44 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = type == "Movie",
+                    onClick = { viewModel.onTypeChange("Movie") },
+                    label = { Text("Film") }
+                )
+                FilterChip(
+                    selected = type == "TV Series",
+                    onClick = { viewModel.onTypeChange("TV Series") },
+                    label = { Text("TV Series") }
+                )
+            }
+
+            OutlinedTextField(
+                value = genres,
+                onValueChange = viewModel::onGenresChange,
+                label = { Text("Genres (comma separated)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = durationText,
+                onValueChange = viewModel::onDurationChange,
+                label = { Text("Duration (minutes)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+
+            OutlinedTextField(
+                value = posterUrl,
+                onValueChange = viewModel::onPosterUrlChange,
+                label = { Text("Poster URL") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
             ExposedDropdownMenuBox(
