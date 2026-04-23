@@ -197,7 +197,9 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
                 )
             } else {
                 TopAppBar(
-                    title = { Text("My Shelf") },
+                    title = {
+                        Text(if (movies.isNotEmpty()) "My Shelf (${movies.size})" else "My Shelf")
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),
