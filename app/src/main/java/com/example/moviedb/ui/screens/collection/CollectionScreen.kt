@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -44,6 +45,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -416,6 +420,12 @@ private fun MovieDetailsDialog(
     onDismiss: () -> Unit,
     onEdit: () -> Unit
 ) {
+    var showFullscreen by remember { mutableStateOf(false) }
+
+    if (showFullscreen && movie.posterUrl != null) {
+        PosterFullscreenDialog(url = movie.posterUrl, onDismiss = { showFullscreen = false })
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -435,7 +445,10 @@ private fun MovieDetailsDialog(
                         AsyncImage(
                             model = movie.posterUrl,
                             contentDescription = null,
-                            modifier = Modifier.size(width = 100.dp, height = 140.dp).clip(shape),
+                            modifier = Modifier
+                                .size(width = 100.dp, height = 140.dp)
+                                .clip(shape)
+                                .clickable { showFullscreen = true },
                             contentScale = ContentScale.Crop
                         )
                     } else {
@@ -491,6 +504,31 @@ private fun MovieDetailsDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
+}
+
+@Composable
+private fun PosterFullscreenDialog(url: String, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.85f))
+                .clickable { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = url.replace("/w185/", "/w500/"),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
 }
 
 private fun formatDuration(minutes: Int): String {
