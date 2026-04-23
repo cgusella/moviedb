@@ -290,6 +290,89 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
     }
 }
 
+@Composable
+private fun MovieDetailsDialog(
+    movie: Movie,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val shape = RoundedCornerShape(6.dp)
+                    if (movie.posterUrl != null) {
+                        AsyncImage(
+                            model = movie.posterUrl,
+                            contentDescription = null,
+                            modifier = Modifier.size(width = 100.dp, height = 140.dp).clip(shape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 100.dp, height = 140.dp)
+                                .clip(shape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Movie, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Text(
+                    text = "${movie.director} · ${movie.year} · ${movie.format}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (movie.durationMinutes != null) {
+                    Text(
+                        text = formatDuration(movie.durationMinutes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!movie.genres.isNullOrBlank()) {
+                    Text(
+                        text = movie.genres,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (movie.seriesName != null) {
+                    Text(
+                        text = "Series: ${movie.seriesName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                val badgeLabel = if (movie.type == "TV Series") "TV Series" else "Film"
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(badgeLabel, style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.height(24.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onDismiss(); onEdit() }) { Text("Edit") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+}
+
 private fun formatDuration(minutes: Int): String {
     val h = minutes / 60
     val m = minutes % 60
@@ -331,6 +414,15 @@ private fun MovieListItem(
     onEdit: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
+
+    if (showDetailsDialog) {
+        MovieDetailsDialog(
+            movie = movie,
+            onDismiss = { showDetailsDialog = false },
+            onEdit = onEdit
+        )
+    }
 
     if (showDialog) {
         AlertDialog(
@@ -350,7 +442,7 @@ private fun MovieListItem(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { if (isSelectionMode) onToggleSelect() else onEdit() },
+                onClick = { if (isSelectionMode) onToggleSelect() else showDetailsDialog = true },
                 onLongClick = { if (!isSelectionMode) onLongClick() }
             ),
         colors = if (selected)
