@@ -6,10 +6,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -24,10 +28,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -254,7 +260,11 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
+        val indexLabels = remember(movies, sortOption.field) {
+            indexLabels(movies, sortOption.field)
+        }
+
+        Box(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
@@ -270,8 +280,9 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
             } else {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 40.dp, top = 8.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     items(movies, key = { it.id }) { movie ->
                         MovieListItem(
@@ -285,9 +296,116 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
                         )
                     }
                 }
+
+                AlphabetIndexBar(
+                    labels = indexLabels,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight(),
+                    onLabelSelected = { label ->
+                        val idx = firstIndexForLabel(label, movies, sortOption.field)
+                        scope.launch { listState.scrollToItem(idx) }
+                    }
+                )
             }
         }
     }
+}
+
+@Composable
+private fun AlphabetIndexBar(
+    labels: List<String>,
+    modifier: Modifier = Modifier,
+    onLabelSelected: (String) -> Unit
+) {
+    if (labels.isEmpty()) return
+    var activeLabel by remember { mutableStateOf<String?>(null) }
+
+    Box(modifier = modifier) {
+        activeLabel?.let { label ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = (-36).dp)
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(24.dp)
+                .pointerInput(labels) {
+                    val count = labels.size.coerceAtLeast(1)
+                    fun labelAt(y: Float): String {
+                        val idx = (y / (size.height.toFloat() / count))
+                            .toInt()
+                            .coerceIn(0, labels.lastIndex)
+                        return labels[idx]
+                    }
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val first = labelAt(down.position.y)
+                        activeLabel = first
+                        onLabelSelected(first)
+                        drag(down.id) { change ->
+                            val l = labelAt(change.position.y)
+                            if (l != activeLabel) {
+                                activeLabel = l
+                                onLabelSelected(l)
+                            }
+                        }
+                        activeLabel = null
+                    }
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            labels.forEach { label ->
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
+private fun indexLabels(movies: List<Movie>, field: SortField): List<String> {
+    return movies.map { movie ->
+        when (field) {
+            SortField.TITLE -> movie.title.firstOrNull()
+                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+            SortField.DIRECTOR -> movie.director.firstOrNull()
+                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+            SortField.YEAR -> "${(movie.year / 10) * 10}s"
+        }
+    }.distinct()
+}
+
+private fun firstIndexForLabel(label: String, movies: List<Movie>, field: SortField): Int {
+    return movies.indexOfFirst { movie ->
+        val key = when (field) {
+            SortField.TITLE -> movie.title.firstOrNull()
+                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+            SortField.DIRECTOR -> movie.director.firstOrNull()
+                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+            SortField.YEAR -> "${(movie.year / 10) * 10}s"
+        }
+        key == label
+    }.coerceAtLeast(0)
 }
 
 @Composable
