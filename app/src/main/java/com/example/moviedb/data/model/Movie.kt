@@ -15,5 +15,6 @@ data class Movie(
     val posterUrl: String? = null,
     val durationMinutes: Int? = null,
     val genres: String? = null,
+    val overview: String? = null,
     val addedAt: Long = System.currentTimeMillis()
 )

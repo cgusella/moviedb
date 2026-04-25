@@ -15,8 +15,8 @@ class SearchViewModel(private val repository: MovieRepository) : ViewModel() {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _selectedGenre = MutableStateFlow<String?>(null)
-    val selectedGenre: StateFlow<String?> = _selectedGenre.asStateFlow()
+    private val _selectedGenres = MutableStateFlow<Set<String>>(emptySet())
+    val selectedGenres: StateFlow<Set<String>> = _selectedGenres.asStateFlow()
 
     val availableGenres: StateFlow<List<String>> = repository.allMovies
         .map { movies ->
@@ -31,9 +31,9 @@ class SearchViewModel(private val repository: MovieRepository) : ViewModel() {
     val results: StateFlow<List<Movie>> = combine(
         repository.allMovies,
         _query.debounce(300),
-        _selectedGenre
-    ) { all, q, genre ->
-        if (q.isBlank() && genre == null) emptyList()
+        _selectedGenres
+    ) { all, q, genres ->
+        if (q.isBlank() && genres.isEmpty()) emptyList()
         else all
             .filter { movie ->
                 q.isBlank() ||
@@ -41,7 +41,7 @@ class SearchViewModel(private val repository: MovieRepository) : ViewModel() {
                     movie.director.contains(q, ignoreCase = true)
             }
             .filter { movie ->
-                genre == null || movie.genres?.split(", ")?.contains(genre) == true
+                genres.isEmpty() || movie.genres?.split(", ")?.let { genres.all { g -> g in it } } == true
             }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -51,11 +51,13 @@ class SearchViewModel(private val repository: MovieRepository) : ViewModel() {
 
     fun onQueryChange(q: String) {
         _query.value = q
-        if (q.isNotBlank()) _selectedGenre.value = null
+        if (q.isNotBlank()) _selectedGenres.value = emptySet()
     }
 
     fun onGenreSelected(genre: String) {
-        _selectedGenre.value = if (_selectedGenre.value == genre) null else genre
+        _selectedGenres.value = _selectedGenres.value.toMutableSet().apply {
+            if (!add(genre)) remove(genre)
+        }
     }
 
     companion object {

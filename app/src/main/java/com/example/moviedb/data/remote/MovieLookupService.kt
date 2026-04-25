@@ -15,7 +15,8 @@ data class MovieLookupResult(
     val type: String = "Movie",
     val posterUrl: String? = null,
     val durationMinutes: Int? = null,
-    val genres: List<String> = emptyList()
+    val genres: List<String> = emptyList(),
+    val overview: String? = null
 )
 
 data class TmdbSearchResult(
@@ -92,7 +93,8 @@ class MovieLookupService {
                     ?.takeIf { it > 0 }
                 val genres = json.getAsJsonArray("genres")
                     ?.mapNotNull { it.asJsonObject.get("name")?.asString } ?: emptyList()
-                MovieLookupResult(title, director, year, "Movie", posterUrl, durationMinutes, genres)
+                val overview = json.get("overview")?.takeIf { !it.isJsonNull }?.asString?.ifBlank { null }
+                MovieLookupResult(title, director, year, "Movie", posterUrl, durationMinutes, genres, overview)
             }
         }.getOrNull()
     }
@@ -113,7 +115,8 @@ class MovieLookupService {
                     ?.firstOrNull()?.asInt?.takeIf { it > 0 }
                 val genres = json.getAsJsonArray("genres")
                     ?.mapNotNull { it.asJsonObject.get("name")?.asString } ?: emptyList()
-                MovieLookupResult(title, creator, year, "TV Series", posterUrl, durationMinutes, genres)
+                val overview = json.get("overview")?.takeIf { !it.isJsonNull }?.asString?.ifBlank { null }
+                MovieLookupResult(title, creator, year, "TV Series", posterUrl, durationMinutes, genres, overview)
             }
         }.getOrNull()
     }

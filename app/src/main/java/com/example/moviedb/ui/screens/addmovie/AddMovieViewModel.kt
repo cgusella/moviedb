@@ -83,6 +83,7 @@ class AddMovieViewModel(
     private val _posterUrl = MutableStateFlow<String?>(null)
     private val _durationMinutes = MutableStateFlow<Int?>(null)
     private val _genres = MutableStateFlow<String?>(null)
+    private val _overview = MutableStateFlow<String?>(null)
     private val _type = MutableStateFlow("Movie")
 
     fun onTitleSearchResultSelected(tmdbId: Int, type: String) {
@@ -100,6 +101,7 @@ class AddMovieViewModel(
                 _posterUrl.value = result.posterUrl
                 _durationMinutes.value = result.durationMinutes
                 _genres.value = result.genres.joinToString(", ").ifBlank { null }
+                _overview.value = result.overview
                 _type.value = result.type
             }
         }
@@ -192,7 +194,8 @@ class AddMovieViewModel(
                     seriesName = sName,
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value,
-                    genres = _genres.value
+                    genres = _genres.value,
+                    overview = _overview.value
                 )
             )
             Destination.WISHLIST -> repository.addToWishlist(
@@ -205,7 +208,8 @@ class AddMovieViewModel(
                     seriesName = sName,
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value,
-                    genres = _genres.value
+                    genres = _genres.value,
+                    overview = _overview.value
                 )
             )
         }
@@ -219,6 +223,7 @@ class AddMovieViewModel(
         _posterUrl.value = null
         _durationMinutes.value = null
         _genres.value = null
+        _overview.value = null
         _type.value = "Movie"
     }
 

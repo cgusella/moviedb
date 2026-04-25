@@ -36,7 +36,7 @@ fun SearchScreen() {
     val results by viewModel.results.collectAsStateWithLifecycle()
     val isInCollection by viewModel.isInCollection.collectAsStateWithLifecycle()
     val availableGenres by viewModel.availableGenres.collectAsStateWithLifecycle()
-    val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
+    val selectedGenres by viewModel.selectedGenres.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -83,7 +83,7 @@ fun SearchScreen() {
                 ) {
                     availableGenres.forEach { genre ->
                         FilterChip(
-                            selected = selectedGenre == genre,
+                            selected = genre in selectedGenres,
                             onClick = { viewModel.onGenreSelected(genre) },
                             label = { Text(genre) }
                         )
@@ -92,7 +92,7 @@ fun SearchScreen() {
             }
 
             when {
-                query.isBlank() && selectedGenre == null -> {
+                query.isBlank() && selectedGenres.isEmpty() -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
