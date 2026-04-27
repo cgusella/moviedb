@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -24,32 +26,34 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.Intent
+import coil3.compose.AsyncImage
 import com.example.moviedb.data.backup.BackupManager
 import com.example.moviedb.data.model.Movie
 import com.example.moviedb.di.AppModule
+import com.example.moviedb.ui.components.MoviePosterThumbnail
+import com.example.moviedb.ui.components.MovieTypeBadge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.content.Intent
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+
+private val DialogPosterShape = RoundedCornerShape(8.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,17 +71,9 @@ fun CollectionScreen(onNavigateToSettings: () -> Unit = {}, onNavigateToEdit: (I
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    var needsScrollToTop by remember { mutableStateOf(false) }
 
     LaunchedEffect(sortOption) {
-        needsScrollToTop = true
-    }
-
-    LaunchedEffect(movies) {
-        if (needsScrollToTop) {
-            listState.scrollToItem(0)
-            needsScrollToTop = false
-        }
+        listState.scrollToItem(0)
     }
 
     var showMenu by remember { mutableStateOf(false) }
@@ -343,7 +339,6 @@ private fun AlphabetIndexBar(
                     text = label,
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelMedium,
-                    fontSize = 14.sp
                 )
             }
         }
@@ -384,37 +379,23 @@ private fun AlphabetIndexBar(
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp
                 )
             }
         }
     }
 }
 
-private fun indexLabels(movies: List<Movie>, field: SortField): List<String> {
-    return movies.map { movie ->
-        when (field) {
-            SortField.TITLE -> movie.title.firstOrNull()
-                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
-            SortField.DIRECTOR -> movie.director.firstOrNull()
-                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
-            SortField.YEAR -> "${(movie.year / 10) * 10}s"
-        }
-    }.distinct()
+private fun Movie.sortKey(field: SortField): String = when (field) {
+    SortField.TITLE -> title.firstOrNull()?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+    SortField.DIRECTOR -> director.firstOrNull()?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
+    SortField.YEAR -> "${(year / 10) * 10}s"
 }
 
-private fun firstIndexForLabel(label: String, movies: List<Movie>, field: SortField): Int {
-    return movies.indexOfFirst { movie ->
-        val key = when (field) {
-            SortField.TITLE -> movie.title.firstOrNull()
-                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
-            SortField.DIRECTOR -> movie.director.firstOrNull()
-                ?.uppercaseChar()?.takeIf { it.isLetter() }?.toString() ?: "#"
-            SortField.YEAR -> "${(movie.year / 10) * 10}s"
-        }
-        key == label
-    }.coerceAtLeast(0)
-}
+private fun indexLabels(movies: List<Movie>, field: SortField): List<String> =
+    movies.map { it.sortKey(field) }.distinct()
+
+private fun firstIndexForLabel(label: String, movies: List<Movie>, field: SortField): Int =
+    movies.indexOfFirst { it.sortKey(field) == label }.coerceAtLeast(0)
 
 @Composable
 private fun MovieDetailsDialog(
@@ -443,14 +424,13 @@ private fun MovieDetailsDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val shape = RoundedCornerShape(6.dp)
                     if (movie.posterUrl != null) {
                         AsyncImage(
                             model = movie.posterUrl,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(width = 100.dp, height = 140.dp)
-                                .clip(shape)
+                                .clip(DialogPosterShape)
                                 .clickable { showFullscreen = true },
                             contentScale = ContentScale.Crop
                         )
@@ -458,7 +438,7 @@ private fun MovieDetailsDialog(
                         Box(
                             modifier = Modifier
                                 .size(width = 100.dp, height = 140.dp)
-                                .clip(shape)
+                                .clip(DialogPosterShape)
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
@@ -492,12 +472,7 @@ private fun MovieDetailsDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                val badgeLabel = if (movie.type == "TV Series") "TV Series" else "Film"
-                SuggestionChip(
-                    onClick = {},
-                    label = { Text(badgeLabel, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(24.dp)
-                )
+                MovieTypeBadge(movie.type)
                 if (!movie.overview.isNullOrBlank()) {
                     HorizontalDivider()
                     Text(
@@ -548,29 +523,6 @@ private fun formatDuration(minutes: Int): String {
     return if (h > 0) "${h}h ${m}m" else "${m}m"
 }
 
-@Composable
-private fun MoviePoster(posterUrl: String?) {
-    val shape = RoundedCornerShape(4.dp)
-    if (posterUrl != null) {
-        AsyncImage(
-            model = posterUrl,
-            contentDescription = null,
-            modifier = Modifier.size(width = 56.dp, height = 80.dp).clip(shape),
-            contentScale = ContentScale.Crop
-        )
-    } else {
-        Box(
-            modifier = Modifier
-                .size(width = 56.dp, height = 80.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.Movie, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MovieListItem(
@@ -607,7 +559,7 @@ private fun MovieListItem(
         )
     }
 
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -615,9 +567,9 @@ private fun MovieListItem(
                 onLongClick = { if (!isSelectionMode) onLongClick() }
             ),
         colors = if (selected)
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         else
-            CardDefaults.cardColors()
+            CardDefaults.elevatedCardColors()
     ) {
         Row(
             modifier = Modifier
@@ -626,7 +578,7 @@ private fun MovieListItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MoviePoster(posterUrl = movie.posterUrl)
+            MoviePosterThumbnail(posterUrl = movie.posterUrl)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = movie.title,
@@ -662,12 +614,7 @@ private fun MovieListItem(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                val badgeLabel = if (movie.type == "TV Series") "TV Series" else "Film"
-                SuggestionChip(
-                    onClick = {},
-                    label = { Text(badgeLabel, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(24.dp)
-                )
+                MovieTypeBadge(movie.type)
             }
             if (isSelectionMode) {
                 Checkbox(

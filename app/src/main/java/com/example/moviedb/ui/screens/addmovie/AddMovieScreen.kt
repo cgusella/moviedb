@@ -30,6 +30,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moviedb.di.AppModule
 
+private val SearchResultShape = RoundedCornerShape(8.dp)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMovieScreen() {
@@ -70,7 +72,7 @@ fun AddMovieScreen() {
             title = { Text("Select a movie") },
             text = {
                 LazyColumn {
-                    items(results) { movie ->
+                    items(results, key = { it.id }) { movie ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -79,7 +81,7 @@ fun AddMovieScreen() {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val shape = RoundedCornerShape(4.dp)
+                            val shape = SearchResultShape
                             if (movie.posterUrl != null) {
                                 AsyncImage(
                                     model = movie.posterUrl,
