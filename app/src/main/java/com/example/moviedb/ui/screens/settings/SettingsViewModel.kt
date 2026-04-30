@@ -28,11 +28,11 @@ class SettingsViewModel(
 
     val sortOwned: StateFlow<String> = SettingsRepository
         .getSortOwned(app)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "recently_added")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "title")
 
     val collectionView: StateFlow<String> = SettingsRepository
         .getCollectionView(app)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "list")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "grid")
 
     fun setLanguage(code: String) {
         viewModelScope.launch { SettingsRepository.setLanguageCode(getApplication(), code) }

@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -49,10 +48,6 @@ private class MovieDetailViewModel(
         viewModelScope.launch { _movie.value = repository.getMovieById(movieId) }
     }
 
-    fun demoteToWishlist(movie: Movie, onDone: () -> Unit) {
-        viewModelScope.launch { repository.demoteToWishlist(movie); onDone() }
-    }
-
     fun deleteMovie(movie: Movie, onDone: () -> Unit) {
         viewModelScope.launch { repository.deleteMovie(movie); onDone() }
     }
@@ -78,7 +73,6 @@ fun MovieDetailScreen(
 
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showMoveConfirm by remember { mutableStateOf(false) }
 
     if (showDeleteConfirm) {
         AlertDialog(
@@ -93,23 +87,6 @@ fun MovieDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
-            }
-        )
-    }
-
-    if (showMoveConfirm) {
-        AlertDialog(
-            onDismissRequest = { showMoveConfirm = false },
-            title = { Text("Move to Wishlist") },
-            text = { Text("Move \"${movie?.title}\" to your wishlist?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showMoveConfirm = false
-                    movie?.let { viewModel.demoteToWishlist(it) { onBack() } }
-                }) { Text("Move") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showMoveConfirm = false }) { Text("Cancel") }
             }
         )
     }
@@ -140,20 +117,6 @@ fun MovieDetailScreen(
                 }
             )
         },
-        bottomBar = {
-            Surface(shadowElevation = 8.dp) {
-                Box(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
-                    OutlinedButton(
-                        onClick = { showMoveConfirm = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Move to Wishlist")
-                    }
-                }
-            }
-        }
     ) { padding ->
         val m = movie
         if (m == null) {
@@ -209,6 +172,7 @@ fun MovieDetailScreen(
                         add(m.year.toString())
                         if (m.durationMinutes != null) add(formatDuration(m.durationMinutes))
                         if (!m.genres.isNullOrBlank()) add(m.genres.split(",").firstOrNull()?.trim() ?: "")
+                        if (m.format.isNotBlank()) add(m.format)
                     }.filter { it.isNotBlank() }.joinToString(" · ")
                     if (meta.isNotBlank()) {
                         Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

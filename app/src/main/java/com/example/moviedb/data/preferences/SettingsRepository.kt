@@ -24,7 +24,7 @@ object SettingsRepository {
     }
 
     fun getCollectionView(context: Context): Flow<String> =
-        context.dataStore.data.map { it[KEY_COLLECTION_VIEW] ?: "list" }
+        context.dataStore.data.map { it[KEY_COLLECTION_VIEW] ?: "grid" }
 
     suspend fun setCollectionView(context: Context, view: String) {
         context.dataStore.edit { it[KEY_COLLECTION_VIEW] = view }
@@ -45,7 +45,7 @@ object SettingsRepository {
     }
 
     fun getSortOwned(context: Context): Flow<String> =
-        context.dataStore.data.map { it[KEY_SORT_OWNED] ?: "recently_added" }
+        context.dataStore.data.map { it[KEY_SORT_OWNED] ?: "title" }
 
     suspend fun setSortOwned(context: Context, value: String) {
         context.dataStore.edit { it[KEY_SORT_OWNED] = value }

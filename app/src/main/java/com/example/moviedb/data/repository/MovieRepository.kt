@@ -61,24 +61,6 @@ class MovieRepository(
         )
     }
 
-    suspend fun demoteToWishlist(movie: Movie) {
-        movieDao.deleteMovie(movie)
-        wishlistDao.insertWishlistMovie(
-            WishlistMovie(
-                title = movie.title,
-                director = movie.director,
-                year = movie.year,
-                format = movie.format,
-                type = movie.type,
-                seriesName = movie.seriesName,
-                posterUrl = movie.posterUrl,
-                durationMinutes = movie.durationMinutes,
-                genres = movie.genres,
-                overview = movie.overview
-            )
-        )
-    }
-
     suspend fun clearAll() {
         movieDao.deleteAllMovies()
         wishlistDao.deleteAllWishlistMovies()
