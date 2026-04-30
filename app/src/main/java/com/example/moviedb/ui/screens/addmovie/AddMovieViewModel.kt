@@ -18,6 +18,7 @@ import java.util.Calendar
 
 enum class SearchType { MOVIE, TV }
 
+// 0 = Search, 1 = Details, 2 = Confirm
 sealed class TitleSearchState {
     object Idle : TitleSearchState()
     object Loading : TitleSearchState()
@@ -51,6 +52,13 @@ class AddMovieViewModel(
         .getLanguageCode(application)
         .stateIn(viewModelScope, SharingStarted.Eagerly, "it-IT")
 
+    // ── Step state ──────────────────────────────────────────────────────────
+    private val _currentStep = MutableStateFlow(0)
+    val currentStep: StateFlow<Int> = _currentStep.asStateFlow()
+
+    fun goToStep(step: Int) { _currentStep.value = step }
+
+    // ── Search ──────────────────────────────────────────────────────────────
     private val _searchType = MutableStateFlow(SearchType.MOVIE)
     val searchType: StateFlow<SearchType> = _searchType.asStateFlow()
 
@@ -80,20 +88,34 @@ class AddMovieViewModel(
         }
     }
 
+    // ── Fetched metadata ────────────────────────────────────────────────────
     private val _posterUrl = MutableStateFlow<String?>(null)
+    val posterUrl: StateFlow<String?> = _posterUrl.asStateFlow()
+
     private val _durationMinutes = MutableStateFlow<Int?>(null)
     private val _genres = MutableStateFlow<String?>(null)
+    val genres: StateFlow<String?> = _genres.asStateFlow()
+
     private val _overview = MutableStateFlow<String?>(null)
+    val overview: StateFlow<String?> = _overview.asStateFlow()
+
     private val _type = MutableStateFlow("Movie")
 
-    fun onTitleSearchResultSelected(tmdbId: Int, type: String) {
+    private val _isLoadingDetails = MutableStateFlow(false)
+    val isLoadingDetails: StateFlow<Boolean> = _isLoadingDetails.asStateFlow()
+
+    fun onSearchResultQuickAdd(tmdbId: Int, type: String) = fetchAndGoTo(tmdbId, type, step = 2)
+
+    fun onSearchResultViewDetails(tmdbId: Int, type: String) = fetchAndGoTo(tmdbId, type, step = 1)
+
+    private fun fetchAndGoTo(tmdbId: Int, type: String, step: Int) {
         viewModelScope.launch {
-            _titleSearchState.value = TitleSearchState.Loading
+            _isLoadingDetails.value = true
             val result = if (type == "TV Series")
                 lookupService.fetchTvById(tmdbId, languageCode.value)
             else
                 lookupService.fetchMovieById(tmdbId, languageCode.value)
-            _titleSearchState.value = TitleSearchState.Idle
+            _isLoadingDetails.value = false
             if (result != null) {
                 _title.value = result.title
                 _director.value = result.director
@@ -104,11 +126,11 @@ class AddMovieViewModel(
                 _overview.value = result.overview
                 _type.value = result.type
             }
+            _currentStep.value = step
         }
     }
 
-    fun dismissTitleSearch() { _titleSearchState.value = TitleSearchState.Idle }
-
+    // ── Form fields ─────────────────────────────────────────────────────────
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
 
@@ -220,16 +242,13 @@ class AddMovieViewModel(
         _title.value = ""; _director.value = ""; _year.value = ""; _format.value = "DVD"
         _belongsToSeries.value = false; _seriesName.value = ""
         _titleSearchQuery.value = ""
-        _posterUrl.value = null
-        _durationMinutes.value = null
-        _genres.value = null
-        _overview.value = null
-        _type.value = "Movie"
+        _posterUrl.value = null; _durationMinutes.value = null
+        _genres.value = null; _overview.value = null; _type.value = "Movie"
+        _currentStep.value = 0
+        _titleSearchState.value = TitleSearchState.Idle
     }
 
-    fun clearUiState() {
-        _uiState.value = AddMovieUiState.Idle
-    }
+    fun clearUiState() { _uiState.value = AddMovieUiState.Idle }
 
     companion object {
         fun factory(repository: MovieRepository): ViewModelProvider.Factory = viewModelFactory {

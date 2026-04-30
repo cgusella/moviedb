@@ -2,11 +2,11 @@ package com.example.moviedb.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Cinema Amber — primary accent
-val Amber80 = Color(0xFFFFD54F)
-val Amber40 = Color(0xFFF57F17)
-val AmberContainer = Color(0xFFFFF3CD)
-val AmberDarkContainer = Color(0xFF3E2600)
+// Cinema Green — primary accent
+val Green80 = Color(0xFF81C784)
+val Green40 = Color(0xFF2E7D32)
+val GreenContainer = Color(0xFFC8E6C9)
+val GreenDarkContainer = Color(0xFF1B5E20)
 
 // Midnight Navy — dark theme surfaces
 val MidnightBlue = Color(0xFF0C0C18)

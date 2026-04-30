@@ -28,6 +28,9 @@ interface MovieDao {
     @Query("SELECT * FROM movies ORDER BY year DESC, LOWER(title) ASC")
     fun getByYearDesc(): Flow<List<Movie>>
 
+    @Query("SELECT * FROM movies ORDER BY addedAt DESC")
+    fun getByAddedAtDesc(): Flow<List<Movie>>
+
     @Query("""
         SELECT * FROM movies
         WHERE LOWER(title) LIKE '%' || LOWER(:query) || '%'
@@ -50,4 +53,7 @@ interface MovieDao {
 
     @Delete
     suspend fun deleteMovie(movie: Movie)
+
+    @Query("DELETE FROM movies")
+    suspend fun deleteAllMovies()
 }
