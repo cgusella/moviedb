@@ -2,23 +2,36 @@ package com.example.moviedb.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Cinema Green — primary accent
-val Green80 = Color(0xFF81C784)
-val Green40 = Color(0xFF2E7D32)
-val GreenContainer = Color(0xFFC8E6C9)
-val GreenDarkContainer = Color(0xFF1B5E20)
+// Primary accent — Cinema Green
+val CinemaGreen      = Color(0xFF22C55E)
+val CinemaGreenDark  = Color(0xFF16A34A)
+val CinemaGreenLight = Color(0xFFDCFCE7)
+val CinemaGreenDeep  = Color(0xFF14532D)
 
-// Midnight Navy — dark theme surfaces
-val MidnightBlue = Color(0xFF0C0C18)
-val MidnightSurface = Color(0xFF12121E)
-val MidnightVariant = Color(0xFF1E1E2E)
+// Dark theme surfaces
+val Dark900 = Color(0xFF0F172A)   // primary background
+val Dark800 = Color(0xFF111827)   // cards / secondary surface
+val Dark700 = Color(0xFF1F2933)   // elevated elements
+val Dark600 = Color(0xFF1F2937)   // borders
 
-// Indigo — secondary
-val Indigo80 = Color(0xFFBBBDEF)
-val Indigo40 = Color(0xFF3949AB)
-val IndigoContainer = Color(0xFFDEE0FF)
-val IndigoDarkContainer = Color(0xFF1A1F6E)
+// Light theme surfaces
+val Light100 = Color(0xFFF7F7F8)  // primary background
+val Light50  = Color(0xFFFFFFFF)  // cards / secondary surface
+val Light75  = Color(0xFFFAFAFA)  // elevated elements
+val LightBorder = Color(0xFFE5E7EB)
+val LightChip   = Color(0xFFF3F4F6)
 
-// Rose — tertiary / error
-val Rose80 = Color(0xFFFFB4AB)
-val Rose40 = Color(0xFFBA1A1A)
+// Text — dark theme
+val TextPrimaryDark   = Color(0xFFF9FAFB)
+val TextSecondaryDark = Color(0xFFD1D5DB)
+val TextTertiary      = Color(0xFF9CA3AF)
+
+// Text — light theme
+val TextPrimaryLight   = Color(0xFF111827)
+val TextSecondaryLight = Color(0xFF6B7280)
+
+// Error
+val ErrorRed       = Color(0xFFEF4444)
+val ErrorRedDark   = Color(0xFFDC2626)
+val ErrorContainer = Color(0xFFFEE2E2)
+val ErrorOnContainer = Color(0xFF7F1D1D)
