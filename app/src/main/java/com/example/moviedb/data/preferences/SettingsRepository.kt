@@ -15,6 +15,7 @@ object SettingsRepository {
     private val KEY_WISHLIST_VIEW = stringPreferencesKey("wishlist_view")
     private val KEY_APPEARANCE = stringPreferencesKey("appearance")
     private val KEY_SORT_OWNED = stringPreferencesKey("sort_owned")
+    private val KEY_LAST_SERIES = stringPreferencesKey("last_series")
 
     fun getLanguageCode(context: Context): Flow<String> =
         context.dataStore.data.map { it[KEY_LANGUAGE] ?: "it-IT" }
@@ -49,5 +50,12 @@ object SettingsRepository {
 
     suspend fun setSortOwned(context: Context, value: String) {
         context.dataStore.edit { it[KEY_SORT_OWNED] = value }
+    }
+
+    fun getLastSeries(context: Context): Flow<String> =
+        context.dataStore.data.map { it[KEY_LAST_SERIES] ?: "" }
+
+    suspend fun setLastSeries(context: Context, value: String) {
+        context.dataStore.edit { it[KEY_LAST_SERIES] = value }
     }
 }

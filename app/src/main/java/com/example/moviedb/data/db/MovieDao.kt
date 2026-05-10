@@ -54,6 +54,9 @@ interface MovieDao {
     @Delete
     suspend fun deleteMovie(movie: Movie)
 
+    @Query("SELECT DISTINCT seriesName FROM movies WHERE seriesName IS NOT NULL AND seriesName != '' ORDER BY seriesName ASC")
+    fun getDistinctSeriesNames(): Flow<List<String>>
+
     @Query("DELETE FROM movies")
     suspend fun deleteAllMovies()
 }

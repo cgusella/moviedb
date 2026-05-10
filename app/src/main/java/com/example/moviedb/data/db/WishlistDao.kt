@@ -30,6 +30,9 @@ interface WishlistDao {
     @Delete
     suspend fun deleteWishlistMovie(movie: WishlistMovie)
 
+    @Query("SELECT DISTINCT seriesName FROM wishlist WHERE seriesName IS NOT NULL AND seriesName != '' ORDER BY seriesName ASC")
+    fun getDistinctSeriesNames(): Flow<List<String>>
+
     @Query("DELETE FROM wishlist")
     suspend fun deleteAllWishlistMovies()
 }

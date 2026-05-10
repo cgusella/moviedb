@@ -8,6 +8,7 @@ import com.example.moviedb.ui.screens.collection.SortDirection
 import com.example.moviedb.ui.screens.collection.SortField
 import com.example.moviedb.ui.screens.collection.SortOption
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -15,6 +16,11 @@ class MovieRepository(
 ) {
     val allMovies: Flow<List<Movie>> = movieDao.getAllMovies()
     val allWishlistMovies: Flow<List<WishlistMovie>> = wishlistDao.getAllWishlistMovies()
+
+    val distinctSeriesNames: Flow<List<String>> = combine(
+        movieDao.getDistinctSeriesNames(),
+        wishlistDao.getDistinctSeriesNames()
+    ) { fromMovies, fromWishlist -> (fromMovies + fromWishlist).distinct().sorted() }
 
     fun getMoviesSorted(sortOption: SortOption): Flow<List<Movie>> = when (sortOption.field) {
         SortField.TITLE -> if (sortOption.direction == SortDirection.ASC) movieDao.getByTitleAsc() else movieDao.getByTitleDesc()

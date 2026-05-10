@@ -274,6 +274,8 @@ private fun DetailsStep(viewModel: AddMovieViewModel) {
     val validationError = uiState as? AddMovieUiState.ValidationError
     var formatExpanded by remember { mutableStateOf(false) }
     val formats = listOf("DVD", "Blu-ray", "4K", "Video tape")
+    val seriesNameSuggestions by viewModel.seriesNameSuggestions.collectAsStateWithLifecycle()
+    var seriesDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -313,11 +315,37 @@ private fun DetailsStep(viewModel: AddMovieViewModel) {
         }
 
         if (belongsToSeries) {
-            OutlinedTextField(value = seriesName, onValueChange = viewModel::onSeriesNameChange,
-                label = { Text("Series name") },
-                isError = validationError?.seriesNameError != null,
-                supportingText = validationError?.seriesNameError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(), singleLine = true)
+            val filteredSuggestions = seriesNameSuggestions.filter {
+                it.contains(seriesName, ignoreCase = true)
+            }
+            ExposedDropdownMenuBox(
+                expanded = seriesDropdownExpanded && filteredSuggestions.isNotEmpty(),
+                onExpandedChange = { seriesDropdownExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = seriesName,
+                    onValueChange = { viewModel.onSeriesNameChange(it); seriesDropdownExpanded = true },
+                    label = { Text("Series name") },
+                    isError = validationError?.seriesNameError != null,
+                    supportingText = validationError?.seriesNameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable),
+                    singleLine = true
+                )
+                ExposedDropdownMenu(
+                    expanded = seriesDropdownExpanded && filteredSuggestions.isNotEmpty(),
+                    onDismissRequest = { seriesDropdownExpanded = false }
+                ) {
+                    filteredSuggestions.forEach { suggestion ->
+                        DropdownMenuItem(
+                            text = { Text(suggestion) },
+                            onClick = {
+                                viewModel.onSeriesNameChange(suggestion)
+                                seriesDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(Modifier.height(4.dp))

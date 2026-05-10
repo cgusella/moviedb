@@ -52,6 +52,19 @@ class AddMovieViewModel(
         .getLanguageCode(application)
         .stateIn(viewModelScope, SharingStarted.Eagerly, "it-IT")
 
+    val seriesNameSuggestions: StateFlow<List<String>> = repository.distinctSeriesNames
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            val last = SettingsRepository.getLastSeries(application).first()
+            if (last.isNotBlank()) {
+                _seriesName.value = last
+                _belongsToSeries.value = true
+            }
+        }
+    }
+
     // ── Step state ──────────────────────────────────────────────────────────
     private val _currentStep = MutableStateFlow(0)
     val currentStep: StateFlow<Int> = _currentStep.asStateFlow()
@@ -234,6 +247,9 @@ class AddMovieViewModel(
                     overview = _overview.value
                 )
             )
+        }
+        if (!sName.isNullOrBlank()) {
+            SettingsRepository.setLastSeries(getApplication(), sName)
         }
         _uiState.value = AddMovieUiState.Success(destination)
     }
