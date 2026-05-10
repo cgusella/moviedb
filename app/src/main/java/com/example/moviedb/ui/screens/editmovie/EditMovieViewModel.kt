@@ -66,6 +66,9 @@ class EditMovieViewModel(
     private val _type = MutableStateFlow("Movie")
     val type: StateFlow<String> = _type.asStateFlow()
 
+    private val _overview = MutableStateFlow("")
+    val overview: StateFlow<String> = _overview.asStateFlow()
+
     init {
         viewModelScope.launch {
             val movie = repository.getMovieById(movieId)
@@ -84,6 +87,7 @@ class EditMovieViewModel(
             _durationText.value = movie.durationMinutes?.toString() ?: ""
             _genres.value = movie.genres ?: ""
             _type.value = movie.type
+            _overview.value = movie.overview ?: ""
             _uiState.value = EditMovieUiState.Idle
         }
     }
@@ -98,6 +102,7 @@ class EditMovieViewModel(
     fun onPosterUrlChange(v: String) { _posterUrl.value = v }
     fun onDurationChange(v: String) { if (v.all { it.isDigit() }) _durationText.value = v }
     fun onGenresChange(v: String) { _genres.value = v }
+    fun onOverviewChange(v: String) { _overview.value = v }
     private fun resetIfError() {
         if (_uiState.value is EditMovieUiState.ValidationError) _uiState.value = EditMovieUiState.Idle
     }
@@ -133,7 +138,8 @@ class EditMovieViewModel(
                     seriesName = if (_belongsToSeries.value) _seriesName.value.trim().ifBlank { null } else null,
                     posterUrl = _posterUrl.value.ifBlank { null },
                     durationMinutes = _durationText.value.toIntOrNull(),
-                    genres = _genres.value.ifBlank { null }
+                    genres = _genres.value.ifBlank { null },
+                    overview = _overview.value.ifBlank { null }
                 )
             )
             _uiState.value = EditMovieUiState.Saved

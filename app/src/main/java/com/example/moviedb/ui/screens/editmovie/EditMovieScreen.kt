@@ -40,6 +40,7 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
     val genres by viewModel.genres.collectAsStateWithLifecycle()
     val durationText by viewModel.durationText.collectAsStateWithLifecycle()
     val posterUrl by viewModel.posterUrl.collectAsStateWithLifecycle()
+    val overview by viewModel.overview.collectAsStateWithLifecycle()
 
     val validationError = uiState as? EditMovieUiState.ValidationError
     val snackbarHostState = remember { SnackbarHostState() }
@@ -155,6 +156,14 @@ fun EditMovieScreen(movieId: Int, onBack: () -> Unit) {
                 label = { Text("Poster URL") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
+            )
+
+            OutlinedTextField(
+                value = overview,
+                onValueChange = viewModel::onOverviewChange,
+                label = { Text("Plot") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
             )
 
             ExposedDropdownMenuBox(
