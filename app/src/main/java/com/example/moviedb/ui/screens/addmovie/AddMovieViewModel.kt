@@ -112,6 +112,12 @@ class AddMovieViewModel(
     private val _overview = MutableStateFlow<String?>(null)
     val overview: StateFlow<String?> = _overview.asStateFlow()
 
+    private val _cast = MutableStateFlow<String?>(null)
+    val cast: StateFlow<String?> = _cast.asStateFlow()
+
+    private val _trailerKey = MutableStateFlow<String?>(null)
+    val trailerKey: StateFlow<String?> = _trailerKey.asStateFlow()
+
     private val _type = MutableStateFlow("Movie")
 
     private val _isLoadingDetails = MutableStateFlow(false)
@@ -137,6 +143,8 @@ class AddMovieViewModel(
                 _durationMinutes.value = result.durationMinutes
                 _genres.value = result.genres.joinToString(", ").ifBlank { null }
                 _overview.value = result.overview
+                _cast.value = result.cast.joinToString(", ").ifBlank { null }
+                _trailerKey.value = result.trailerKey
                 _type.value = result.type
             }
             _currentStep.value = step
@@ -230,7 +238,9 @@ class AddMovieViewModel(
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value,
                     genres = _genres.value,
-                    overview = _overview.value
+                    overview = _overview.value,
+                    cast = _cast.value,
+                    trailerKey = _trailerKey.value
                 )
             )
             Destination.WISHLIST -> repository.addToWishlist(
@@ -244,7 +254,9 @@ class AddMovieViewModel(
                     posterUrl = _posterUrl.value,
                     durationMinutes = _durationMinutes.value,
                     genres = _genres.value,
-                    overview = _overview.value
+                    overview = _overview.value,
+                    cast = _cast.value,
+                    trailerKey = _trailerKey.value
                 )
             )
         }
@@ -259,7 +271,9 @@ class AddMovieViewModel(
         _belongsToSeries.value = false; _seriesName.value = ""
         _titleSearchQuery.value = ""
         _posterUrl.value = null; _durationMinutes.value = null
-        _genres.value = null; _overview.value = null; _type.value = "Movie"
+        _genres.value = null; _overview.value = null
+        _cast.value = null; _trailerKey.value = null
+        _type.value = "Movie"
         _currentStep.value = 0
         _titleSearchState.value = TitleSearchState.Idle
     }

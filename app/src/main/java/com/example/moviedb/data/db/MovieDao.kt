@@ -39,6 +39,9 @@ interface MovieDao {
     """)
     fun searchMovies(query: String): Flow<List<Movie>>
 
+    @Query("SELECT * FROM movies WHERE `cast` IS NULL")
+    suspend fun getMoviesWithoutCast(): List<Movie>
+
     @Query("SELECT EXISTS(SELECT 1 FROM movies WHERE LOWER(title) = LOWER(:title) AND year = :year)")
     suspend fun movieExists(title: String, year: Int): Boolean
 

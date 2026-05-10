@@ -33,6 +33,12 @@ interface WishlistDao {
     @Query("SELECT DISTINCT seriesName FROM wishlist WHERE seriesName IS NOT NULL AND seriesName != '' ORDER BY seriesName ASC")
     fun getDistinctSeriesNames(): Flow<List<String>>
 
+    @Query("SELECT * FROM wishlist WHERE `cast` IS NULL")
+    suspend fun getWishlistWithoutCast(): List<WishlistMovie>
+
+    @Update
+    suspend fun updateWishlistMovie(movie: WishlistMovie)
+
     @Query("DELETE FROM wishlist")
     suspend fun deleteAllWishlistMovies()
 }

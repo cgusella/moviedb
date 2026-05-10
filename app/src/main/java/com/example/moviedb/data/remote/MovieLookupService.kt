@@ -16,7 +16,9 @@ data class MovieLookupResult(
     val posterUrl: String? = null,
     val durationMinutes: Int? = null,
     val genres: List<String> = emptyList(),
-    val overview: String? = null
+    val overview: String? = null,
+    val cast: List<String> = emptyList(),
+    val trailerKey: String? = null
 )
 
 data class TmdbSearchResult(
@@ -76,17 +78,23 @@ class MovieLookupService {
     }
 
     suspend fun fetchMovieById(tmdbId: Int, language: String = "it-IT"): MovieLookupResult? = withContext(Dispatchers.IO) {
-        val url = "https://api.themoviedb.org/3/movie/$tmdbId?append_to_response=credits&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
+        val url = "https://api.themoviedb.org/3/movie/$tmdbId?append_to_response=credits,videos&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext null
                 val json = JsonParser.parseString(body).asJsonObject
                 val title = json.get("title")?.asString ?: return@withContext null
                 val year = json.get("release_date")?.asString?.take(4) ?: ""
-                val director = json.getAsJsonObject("credits")
+                val credits = json.getAsJsonObject("credits")
+                val director = credits
                     ?.getAsJsonArray("crew")
                     ?.firstOrNull { it.asJsonObject.get("job")?.asString == "Director" }
                     ?.asJsonObject?.get("name")?.asString ?: ""
+                val cast = credits
+                    ?.getAsJsonArray("cast")
+                    ?.take(5)
+                    ?.mapNotNull { it.asJsonObject.get("name")?.asString }
+                    ?: emptyList()
                 val posterUrl = json.get("poster_path")?.takeIf { !it.isJsonNull }?.asString
                     ?.let { "https://image.tmdb.org/t/p/w185$it" }
                 val durationMinutes = json.get("runtime")?.takeIf { !it.isJsonNull }?.asInt
@@ -94,13 +102,19 @@ class MovieLookupService {
                 val genres = json.getAsJsonArray("genres")
                     ?.mapNotNull { it.asJsonObject.get("name")?.asString } ?: emptyList()
                 val overview = json.get("overview")?.takeIf { !it.isJsonNull }?.asString?.ifBlank { null }
-                MovieLookupResult(title, director, year, "Movie", posterUrl, durationMinutes, genres, overview)
+                val trailerKey = json.getAsJsonObject("videos")
+                    ?.getAsJsonArray("results")
+                    ?.firstOrNull {
+                        val o = it.asJsonObject
+                        o.get("site")?.asString == "YouTube" && o.get("type")?.asString == "Trailer"
+                    }?.asJsonObject?.get("key")?.asString
+                MovieLookupResult(title, director, year, "Movie", posterUrl, durationMinutes, genres, overview, cast, trailerKey)
             }
         }.getOrNull()
     }
 
     suspend fun fetchTvById(tmdbId: Int, language: String = "it-IT"): MovieLookupResult? = withContext(Dispatchers.IO) {
-        val url = "https://api.themoviedb.org/3/tv/$tmdbId?append_to_response=credits&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
+        val url = "https://api.themoviedb.org/3/tv/$tmdbId?append_to_response=credits,videos&language=$language&api_key=${BuildConfig.TMDB_API_KEY}"
         runCatching {
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 val body = response.body?.string() ?: return@withContext null
@@ -109,6 +123,12 @@ class MovieLookupService {
                 val year = json.get("first_air_date")?.asString?.take(4) ?: ""
                 val creator = json.getAsJsonArray("created_by")
                     ?.firstOrNull()?.asJsonObject?.get("name")?.asString ?: ""
+                val credits = json.getAsJsonObject("credits")
+                val cast = credits
+                    ?.getAsJsonArray("cast")
+                    ?.take(5)
+                    ?.mapNotNull { it.asJsonObject.get("name")?.asString }
+                    ?: emptyList()
                 val posterUrl = json.get("poster_path")?.takeIf { !it.isJsonNull }?.asString
                     ?.let { "https://image.tmdb.org/t/p/w185$it" }
                 val durationMinutes = json.getAsJsonArray("episode_run_time")
@@ -116,7 +136,13 @@ class MovieLookupService {
                 val genres = json.getAsJsonArray("genres")
                     ?.mapNotNull { it.asJsonObject.get("name")?.asString } ?: emptyList()
                 val overview = json.get("overview")?.takeIf { !it.isJsonNull }?.asString?.ifBlank { null }
-                MovieLookupResult(title, creator, year, "TV Series", posterUrl, durationMinutes, genres, overview)
+                val trailerKey = json.getAsJsonObject("videos")
+                    ?.getAsJsonArray("results")
+                    ?.firstOrNull {
+                        val o = it.asJsonObject
+                        o.get("site")?.asString == "YouTube" && o.get("type")?.asString == "Trailer"
+                    }?.asJsonObject?.get("key")?.asString
+                MovieLookupResult(title, creator, year, "TV Series", posterUrl, durationMinutes, genres, overview, cast, trailerKey)
             }
         }.getOrNull()
     }

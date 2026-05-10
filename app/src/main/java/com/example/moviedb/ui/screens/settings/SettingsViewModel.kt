@@ -7,11 +7,22 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.moviedb.data.preferences.SettingsRepository
+import com.example.moviedb.data.remote.MovieLookupService
 import com.example.moviedb.data.repository.MovieRepository
+import com.example.moviedb.data.sync.BackfillService
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+sealed class BackfillState {
+    object Idle : BackfillState()
+    object Running : BackfillState()
+    data class Done(val updated: Int) : BackfillState()
+}
 
 class SettingsViewModel(
     app: Application,
@@ -52,6 +63,21 @@ class SettingsViewModel(
             SettingsRepository.setWishlistView(getApplication(), value)
         }
     }
+
+    private val _backfillState = MutableStateFlow<BackfillState>(BackfillState.Idle)
+    val backfillState: StateFlow<BackfillState> = _backfillState.asStateFlow()
+
+    fun enrichFromTmdb() {
+        if (_backfillState.value is BackfillState.Running) return
+        viewModelScope.launch {
+            _backfillState.value = BackfillState.Running
+            val lang = languageCode.first()
+            val count = BackfillService(repository, MovieLookupService(), lang).run()
+            _backfillState.value = BackfillState.Done(count)
+        }
+    }
+
+    fun resetBackfillState() { _backfillState.value = BackfillState.Idle }
 
     fun clearAllData(onDone: () -> Unit) {
         viewModelScope.launch {

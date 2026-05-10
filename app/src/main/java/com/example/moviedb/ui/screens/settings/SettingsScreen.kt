@@ -38,6 +38,7 @@ fun SettingsScreen() {
     val appearance by viewModel.appearance.collectAsStateWithLifecycle()
     val sortOwned by viewModel.sortOwned.collectAsStateWithLifecycle()
     val collectionView by viewModel.collectionView.collectAsStateWithLifecycle()
+    val backfillState by viewModel.backfillState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -46,6 +47,17 @@ fun SettingsScreen() {
     var showAppearanceDialog by remember { mutableStateOf(false) }
     var showDefaultViewDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(backfillState) {
+        if (backfillState is BackfillState.Done) {
+            val count = (backfillState as BackfillState.Done).updated
+            snackbarHostState.showSnackbar(
+                if (count > 0) "$count entries updated." else "Everything is already up to date."
+            )
+            viewModel.resetBackfillState()
+        }
+    }
+
+    var showBackfillConfirm by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
 
@@ -136,6 +148,41 @@ fun SettingsScreen() {
         )
     }
 
+    if (showBackfillConfirm) {
+        AlertDialog(
+            onDismissRequest = { showBackfillConfirm = false },
+            title = { Text("Fetch missing metadata") },
+            text = { Text("This will search TMDB for every entry that is missing cast, trailer or other details. Depending on your collection size it may take a few minutes.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBackfillConfirm = false
+                    viewModel.enrichFromTmdb()
+                }) { Text("Start") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBackfillConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (backfillState is BackfillState.Running) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Fetching metadata") },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text("Please wait, this may take a few minutes…")
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
     if (showClearConfirm) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
@@ -206,6 +253,24 @@ fun SettingsScreen() {
             SettingsSectionHeader("DATA")
             SettingsRow(title = "Backup / Export Data", icon = Icons.Default.Upload) { exportLauncher.launch("moviedb_backup.db") }
             SettingsRow(title = "Import Data", icon = Icons.Default.Download) { showImportDialog = true }
+            ListItem(
+                headlineContent = { Text("Fetch missing metadata") },
+                supportingContent = { Text("Fills cast, trailers and other missing info from TMDB") },
+                leadingContent = {
+                    Icon(Icons.Default.CloudDownload, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
+                trailingContent = {
+                    if (backfillState is BackfillState.Running) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.ChevronRight, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                modifier = if (backfillState is BackfillState.Running) Modifier
+                else Modifier.clickable { showBackfillConfirm = true }
+            )
             SettingsRow(title = "Clear Local Data", icon = Icons.Default.DeleteForever, titleColor = MaterialTheme.colorScheme.error) { showClearConfirm = true }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

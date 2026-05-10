@@ -16,5 +16,7 @@ data class Movie(
     val durationMinutes: Int? = null,
     val genres: String? = null,
     val overview: String? = null,
+    val cast: String? = null,
+    val trailerKey: String? = null,
     val addedAt: Long = System.currentTimeMillis()
 )

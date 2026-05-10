@@ -39,6 +39,10 @@ class MovieRepository(
 
     suspend fun getWishlistMovieById(id: Int): WishlistMovie? = wishlistDao.getWishlistMovieById(id)
 
+    suspend fun getMoviesWithoutCast(): List<Movie> = movieDao.getMoviesWithoutCast()
+    suspend fun getWishlistWithoutCast(): List<WishlistMovie> = wishlistDao.getWishlistWithoutCast()
+    suspend fun updateWishlistMovie(movie: WishlistMovie) = wishlistDao.updateWishlistMovie(movie)
+
     suspend fun addMovie(movie: Movie): Long = movieDao.insertMovie(movie)
 
     suspend fun updateMovie(movie: Movie) = movieDao.updateMovie(movie)
@@ -62,7 +66,9 @@ class MovieRepository(
                 posterUrl = wishlistMovie.posterUrl,
                 durationMinutes = wishlistMovie.durationMinutes,
                 genres = wishlistMovie.genres,
-                overview = wishlistMovie.overview
+                overview = wishlistMovie.overview,
+                cast = wishlistMovie.cast,
+                trailerKey = wishlistMovie.trailerKey
             )
         )
     }

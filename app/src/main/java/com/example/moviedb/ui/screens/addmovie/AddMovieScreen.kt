@@ -13,11 +13,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -389,6 +392,8 @@ private fun ConfirmStep(viewModel: AddMovieViewModel, uiState: AddMovieUiState) 
     val posterUrl by viewModel.posterUrl.collectAsStateWithLifecycle()
     val genres by viewModel.genres.collectAsStateWithLifecycle()
     val overview by viewModel.overview.collectAsStateWithLifecycle()
+    val cast by viewModel.cast.collectAsStateWithLifecycle()
+    val trailerKey by viewModel.trailerKey.collectAsStateWithLifecycle()
 
     if (uiState is AddMovieUiState.DuplicateWarning) {
         AlertDialog(
@@ -436,11 +441,34 @@ private fun ConfirmStep(viewModel: AddMovieViewModel, uiState: AddMovieUiState) 
                         Spacer(Modifier.height(4.dp))
                         Text(overviewVal, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3)
                     }
+                    val castVal = cast
+                    if (!castVal.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text("Cast: $castVal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                    }
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
+
+        val trailerKeyVal = trailerKey
+        val ctx = LocalContext.current
+        if (trailerKeyVal != null) {
+            OutlinedButton(
+                onClick = {
+                    ctx.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$trailerKeyVal"))
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Watch Trailer")
+            }
+            Spacer(Modifier.height(8.dp))
+        }
 
         Button(
             onClick = { viewModel.onSaveClick(Destination.COLLECTION) },

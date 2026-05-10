@@ -11,7 +11,7 @@ import com.example.moviedb.data.model.WishlistMovie
 
 @Database(
     entities = [Movie::class, WishlistMovie::class],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -29,6 +29,15 @@ abstract class MovieDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE movies ADD COLUMN cast TEXT")
+                db.execSQL("ALTER TABLE movies ADD COLUMN trailerKey TEXT")
+                db.execSQL("ALTER TABLE wishlist ADD COLUMN cast TEXT")
+                db.execSQL("ALTER TABLE wishlist ADD COLUMN trailerKey TEXT")
+            }
+        }
+
         fun getInstance(context: Context): MovieDatabase =
             INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -36,7 +45,7 @@ abstract class MovieDatabase : RoomDatabase() {
                     MovieDatabase::class.java,
                     "moviedb.db"
                 )
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build().also { INSTANCE = it }
             }
