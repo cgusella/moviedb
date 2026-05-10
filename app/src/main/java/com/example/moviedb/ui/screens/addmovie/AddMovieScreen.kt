@@ -2,11 +2,13 @@ package com.example.moviedb.ui.screens.addmovie
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -79,8 +81,8 @@ fun AddMovieScreen() {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // Step indicator
-            StepIndicator(currentStep = currentStep)
+            // Breadcrumb indicator
+            BreadcrumbIndicator(currentStep = currentStep)
 
             HorizontalDivider()
 
@@ -96,28 +98,48 @@ fun AddMovieScreen() {
 }
 
 @Composable
-private fun StepIndicator(currentStep: Int) {
+private fun BreadcrumbIndicator(currentStep: Int) {
     val steps = listOf("Search", "Details", "Confirm")
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         steps.forEachIndexed { index, label ->
+            val done = index < currentStep
+            val active = index == currentStep
+            val color = if (done || active) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.wrapContentWidth()
             ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (currentStep == index) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = if (currentStep == index) FontWeight.Bold else FontWeight.Normal,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(if (done || active) color else androidx.compose.ui.graphics.Color.Transparent)
+                        .border(1.5.dp, color, CircleShape)
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+
+            if (index < steps.lastIndex) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 14.dp)
+                        .height(1.5.dp)
                         .background(
-                            if (currentStep == index) MaterialTheme.colorScheme.primary
+                            if (done) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.outlineVariant
                         )
                 )
